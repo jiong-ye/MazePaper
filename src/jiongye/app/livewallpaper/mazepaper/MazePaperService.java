@@ -108,89 +108,9 @@ public class MazePaperService extends WallpaperService {
 
 		void generateMaze() {
 			maze = new Maze(mazeRows, mazeCols);
-			maze.player = new Player();
-
-			Cell curCell = maze.getCell(0, 0);
-			curCell.isEnd = true;
-			int cellsRemain = mazeRows * mazeCols;
-			Stack<Point> track = new Stack<Point>();
-
-			curCell.visited = true;
-			while (cellsRemain > 0) {
-				if (curCell.visited)
-					cellsRemain--;
-
-				curCell.visited = true;
-
-				// check which neighbor hasn't been visited
-				Stack<Point> neighbors = new Stack<Point>();
-
-				// top neighbor
-				if (curCell.pos.x > 0 && !maze.getNeighbor(curCell.pos, CellNeighbor.TOP).visited)
-					neighbors.push(new Point(curCell.pos.x - 1, curCell.pos.y));
-
-				// right neighbor
-				if (curCell.pos.y < mazeCols - 1 && !maze.getNeighbor(curCell.pos, CellNeighbor.RIGHT).visited)
-					neighbors.push(new Point(curCell.pos.x, curCell.pos.y + 1));
-
-				// bottom neighbor
-				if (curCell.pos.x < mazeRows - 1 && !maze.getNeighbor(curCell.pos, CellNeighbor.BOTTOM).visited)
-					neighbors.push(new Point(curCell.pos.x + 1, curCell.pos.y));
-
-				// left neighbor
-				if (curCell.pos.y > 0 && !maze.getNeighbor(curCell.pos, CellNeighbor.LEFT).visited)
-					neighbors.push(new Point(curCell.pos.x, curCell.pos.y - 1));
-
-				// there are unvisited neighbors
-				if (neighbors.size() > 0) {
-					Random randomNeighbor = new Random();
-					int neighborIndex = randomNeighbor.nextInt(neighbors.size());
-					Point neighborPos = null;
-
-					// get a random neighbor
-					neighborPos = neighbors.get(neighborIndex);
-
-					if (neighborPos != null) {
-						Cell newCell = maze.getCell(neighborPos);
-
-						if (newCell != null) {
-							// check neighbor's position relative to current
-							// cell
-							// top cell
-							if (newCell.pos.x < curCell.pos.x) {
-								newCell.walls.put(CellNeighbor.BOTTOM, false);
-								curCell.walls.put(CellNeighbor.TOP, false);
-							}
-
-							// right
-							if (newCell.pos.y > curCell.pos.y) {
-								newCell.walls.put(CellNeighbor.LEFT, false);
-								curCell.walls.put(CellNeighbor.RIGHT, false);
-							}
-
-							// bottom
-							if (newCell.pos.x > curCell.pos.x) {
-								newCell.walls.put(CellNeighbor.TOP, false);
-								curCell.walls.put(CellNeighbor.BOTTOM, false);
-							}
-
-							// left cell
-							if (newCell.pos.y < curCell.pos.y) {
-								newCell.walls.put(CellNeighbor.RIGHT, false);
-								curCell.walls.put(CellNeighbor.LEFT, false);
-							}
-
-							track.push(new Point(curCell.pos.x, curCell.pos.y));
-							curCell = newCell;
-						}
-					}
-				} else {
-					if (track.size() > 0) {
-						Point previousCell = track.pop();
-						curCell = maze.getCell(previousCell);
-					}
-				}
-			}
+			maze.createMaze();
+			
+			maze.player = new Player();			
 		}
 
 		/*

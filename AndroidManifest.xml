@@ -5,8 +5,12 @@
     android:versionCode="1"
     android:versionName="1.0" >
 
-    <uses-sdk android:minSdkVersion="7" />
-    <uses-feature android:name="android.software.live_wallpaper" />
+    <uses-sdk android:minSdkVersion="8" />
+    <uses-feature 	
+        android:glEsVersion="0x00020000"
+        android:required="true"
+        android:name="android.software.live_wallpaper">
+    </uses-feature>
     
     <application
         android:icon="@drawable/icon"
@@ -24,6 +28,13 @@
                 android:name="android.service.wallpaper"
                 android:resource="@xml/mazepaper" />
         </service>
+        <activity
+            android:name=".MazePaperSettings"
+            android:label="MazePaper Settings"
+            android:exported="true"
+            android:theme="@android:style/Theme.Light.WallpaperSettings">
+        </activity>
+        
 		<service
             android:name=".PlayableMazePaperService"
             android:label="@string/playable_app_name"
@@ -37,11 +48,6 @@
                 android:name="android.service.wallpaper"
                 android:resource="@xml/playablemazepaper" />
         </service>
-        <activity
-            android:name=".MazePaperSettings"
-            android:label="MazePaper Settings"
-            android:exported="true"
-            android:theme="@android:style/Theme.Light.WallpaperSettings">
-        </activity>
+        
     </application>
 </manifest>
