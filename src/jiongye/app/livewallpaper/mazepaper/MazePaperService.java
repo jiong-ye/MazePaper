@@ -1,8 +1,5 @@
 package jiongye.app.livewallpaper.mazepaper;
 
-import java.util.Random;
-import java.util.Stack;
-
 import android.content.SharedPreferences;
 import android.graphics.Canvas;
 import android.graphics.Paint;
@@ -35,7 +32,7 @@ public class MazePaperService extends WallpaperService {
 		implements SharedPreferences.OnSharedPreferenceChangeListener {
 		
 		private SharedPreferences preferences;
-		
+
 		private int mazeRows = 5;
 		private int mazeCols = 5;
 		private Maze maze;
@@ -91,12 +88,12 @@ public class MazePaperService extends WallpaperService {
 		@Override
 		public void onSurfaceChanged(SurfaceHolder holder, int format, int width, int height) {
 			super.onSurfaceChanged(holder, format, width, height);
+			
 		}
 
 		@Override
 		public void onSurfaceCreated(SurfaceHolder holder) {
 			super.onSurfaceCreated(holder);
-			generateMaze();
 		}
 
 		@Override
