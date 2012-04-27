@@ -14,7 +14,10 @@ import org.andengine.entity.sprite.Sprite;
 import org.andengine.extension.physics.box2d.PhysicsConnector;
 import org.andengine.extension.physics.box2d.PhysicsFactory;
 import org.andengine.extension.physics.box2d.PhysicsWorld;
+import org.andengine.extension.physics.box2d.util.Vector2Pool;
 import org.andengine.extension.ui.livewallpaper.BaseLiveWallpaperService;
+import org.andengine.input.sensor.acceleration.AccelerationData;
+import org.andengine.input.sensor.acceleration.IAccelerationListener;
 import org.andengine.opengl.texture.TextureOptions;
 import org.andengine.opengl.texture.atlas.bitmap.BitmapTextureAtlas;
 import org.andengine.opengl.texture.atlas.bitmap.BitmapTextureAtlasTextureRegionFactory;
@@ -39,17 +42,19 @@ import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.WindowManager;
 
-public class PlayableMazePaperService extends BaseLiveWallpaperService {
+public class PlayableMazePaperService extends BaseLiveWallpaperService implements IAccelerationListener {
 	Maze maze;
 
-	private int rows = 5;
-	private int columns = 3;
+	private int rows = 10;
+	private int columns = 7;
 
 	private static int CAMERA_WIDTH = 480;
 	private static int CAMERA_HEIGHT = 720;
 
 	private Camera camera;
 	private PhysicsWorld physicsWorld;
+	
+	Rectangle playerRectangle;
 	
 	BitmapTextureAtlasSource bitmapTextureAtlasSource;
 	BitmapTextureAtlas bitmapTextureAtlas;
@@ -59,6 +64,12 @@ public class PlayableMazePaperService extends BaseLiveWallpaperService {
 	FixtureDef playerFixtureDef;
 	
 	TextureRegion textureRegion;
+	
+	@Override
+	public void onCreate(){
+//		 android.os.Debug.waitForDebugger();
+		super.onCreate();
+	}
 	
 	@Override
 	public EngineOptions onCreateEngineOptions() {
@@ -80,8 +91,8 @@ public class PlayableMazePaperService extends BaseLiveWallpaperService {
 		maze.player.radius = 5;
 		maze.createMaze();
 		
-		this.wallFixtureDef = PhysicsFactory.createFixtureDef(0, .5f, .5f);
-		this.playerFixtureDef = PhysicsFactory.createFixtureDef(0, .5f, .5f);
+		this.wallFixtureDef = PhysicsFactory.createFixtureDef(.5f, .1f, .5f);
+		this.playerFixtureDef = PhysicsFactory.createFixtureDef(.5f, .1f, .5f);
 		
 		pOnCreateResourcesCallback.onCreateResourcesFinished();
 	}
@@ -94,12 +105,14 @@ public class PlayableMazePaperService extends BaseLiveWallpaperService {
 
 	@Override
 	public void onCreateScene(OnCreateSceneCallback pOnCreateSceneCallback) throws Exception {
+		this.enableAccelerationSensor(this);
 		Scene scene = new Scene();
 		scene.setBackground(new Background(0, 0, 0));
 		
-		this.physicsWorld = new PhysicsWorld(new Vector2(SensorManager.GRAVITY_EARTH, SensorManager.GRAVITY_EARTH), false);
+		this.physicsWorld = new PhysicsWorld(new Vector2(0, SensorManager.GRAVITY_EARTH), false);
 		
 		if (maze != null) {
+			double distanceLimit = 300;
 			int lineCount = 0;
 			int cWidth = CAMERA_WIDTH;
 			int cHeight = CAMERA_HEIGHT;
@@ -120,33 +133,34 @@ public class PlayableMazePaperService extends BaseLiveWallpaperService {
 						
 						// determine which wall gets drawn
 						if (cell.walls.get(CellNeighbor.TOP)) {
-							drawLine(scene, vertexBufferObjectManager, topLeft, topRight, maze.cellPaint, CellNeighbor.TOP);
-							lineCount++;
+							if(distanceToPlayer(topLeft, topRight, cellSize, horizontalOffset, verticalOffset) < distanceLimit)
+								drawWall(scene, vertexBufferObjectManager, topLeft, topRight, maze.cellPaint, CellNeighbor.TOP);
+							
 						}
 						
 						if (cell.walls.get(CellNeighbor.LEFT)) {
-							drawLine(scene, vertexBufferObjectManager, topLeft, bottomLeft, maze.cellPaint, CellNeighbor.LEFT);
-							lineCount++;
+							if(distanceToPlayer(topLeft, bottomLeft, cellSize, horizontalOffset, verticalOffset) < distanceLimit)
+								drawWall(scene, vertexBufferObjectManager, topLeft, bottomLeft, maze.cellPaint, CellNeighbor.LEFT);
 						}
 
 						if (cell.walls.get(CellNeighbor.RIGHT)) {
-							drawLine(scene, vertexBufferObjectManager, topRight, bottomRight, maze.cellPaint, CellNeighbor.RIGHT);
-							lineCount++;
+							if(distanceToPlayer(topRight, bottomRight, cellSize, horizontalOffset, verticalOffset) < distanceLimit)
+								drawWall(scene, vertexBufferObjectManager, topRight, bottomRight, maze.cellPaint, CellNeighbor.RIGHT);
 						}
 
 						if (cell.walls.get(CellNeighbor.BOTTOM)) {
-							drawLine(scene, vertexBufferObjectManager, bottomLeft, bottomRight, maze.cellPaint, CellNeighbor.BOTTOM);
-							lineCount++;
+							if(distanceToPlayer(bottomLeft, bottomRight, cellSize, horizontalOffset, verticalOffset) < distanceLimit)
+								drawWall(scene, vertexBufferObjectManager, bottomLeft, bottomRight, maze.cellPaint, CellNeighbor.BOTTOM);
 						}
 						
 						if(cell.isStart){
-							Rectangle rectangle = new Rectangle(topLeft.x + cellSize/4, topLeft.y + cellSize/4, cellSize/2, cellSize/2, vertexBufferObjectManager);
-							rectangle.setColor(Color.RED);
+							this.playerRectangle = new Rectangle(topLeft.x + cellSize/4, topLeft.y + cellSize/4, cellSize/2, cellSize/2, vertexBufferObjectManager);
+							this.playerRectangle.setColor(Color.RED);
 							
-							Body playerBody = PhysicsFactory.createCircleBody(this.physicsWorld, rectangle, BodyType.DynamicBody, this.playerFixtureDef);
-							this.physicsWorld.registerPhysicsConnector(new PhysicsConnector(rectangle, playerBody));
+							Body playerBody = PhysicsFactory.createCircleBody(this.physicsWorld, this.playerRectangle, BodyType.DynamicBody, this.playerFixtureDef);
+							this.physicsWorld.registerPhysicsConnector(new PhysicsConnector(this.playerRectangle, playerBody));
 							
-							scene.attachChild(rectangle);
+							scene.attachChild(this.playerRectangle);
 						}
 					}
 				}
@@ -162,7 +176,22 @@ public class PlayableMazePaperService extends BaseLiveWallpaperService {
 		pOnPopulateSceneCallback.onPopulateSceneFinished();
 	}
 	
-	public void drawLine(Scene scene, VertexBufferObjectManager vertexBufferObjectManager, Point a, Point b, Paint p, CellNeighbor position) {
+	public double distanceToPlayer(Point a, Point b, int cellSize, int hOffset, int vOffset){
+		float playerX = 0;
+		float playerY = 0;
+		
+		if(playerRectangle != null){
+			playerX = playerRectangle.getX() + playerRectangle.getWidth()/2;
+			playerY = playerRectangle.getY() + playerRectangle.getHeight()/2;
+		}else{
+			playerX = maze.startPoint.x * cellSize + hOffset + cellSize/2;
+			playerY = maze.startPoint.y * cellSize + vOffset + cellSize/2;
+		}
+		
+		return Math.sqrt(Math.pow(playerY - a.y, 2) + Math.pow(playerX - a.x, 2));
+	}
+	
+	public void drawWall(Scene scene, VertexBufferObjectManager vertexBufferObjectManager, Point a, Point b, Paint p, CellNeighbor position) {
 		Rectangle wall = null;
 		Body body = null;
 		
@@ -188,6 +217,18 @@ public class PlayableMazePaperService extends BaseLiveWallpaperService {
 		
 		if(wall!=null)		
 			scene.attachChild(wall);
+	}
+
+	@Override
+	public void onAccelerationAccuracyChanged(AccelerationData pAccelerationData) {
+
+	}
+
+	@Override
+	public void onAccelerationChanged(AccelerationData pAccelerationData) {
+		final Vector2 gravity = Vector2Pool.obtain(pAccelerationData.getX(), pAccelerationData.getY());
+		this.physicsWorld.setGravity(gravity);
+		Vector2Pool.recycle(gravity);
 	}
 
 }

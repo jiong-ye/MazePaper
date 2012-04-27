@@ -15,15 +15,26 @@ public class Maze {
 	public Cell[][] cells;
 	public Player player;
 
+	public Point startPoint;
+	public Point endPoint;
+	
 	public Paint cellPaint;
 	public Paint endCellPaint;
 	public Paint playerVisitedCellPaint;
-	
+		
 	public int cellStrokeWidth;
 
 	public boolean solved;
 
-	public Maze(int _rows, int _columns) {
+	public Maze(int _rows, int _columns){
+		init(_rows, _columns, new Point(_rows-1,_columns-1), new Point(0,0));
+	}
+	
+	public Maze(int _rows, int _columns, Point _start, Point _end) {
+		init(_rows, _columns, _start, _end);
+	}
+	
+	public void init(int _rows, int _columns, Point _start, Point _end){
 		this.solved = false;
 
 		this.rows = _rows;
@@ -37,8 +48,10 @@ public class Maze {
 			}
 		}
 
-		this.cells[0][0].isEnd = true;
-		this.cells[_rows - 1][_columns - 1].isStart = true;
+		this.endPoint = _end;
+		this.startPoint = _start;
+		this.cells[_end.x][_end.y].isEnd = true;
+		this.cells[_start.x][_start.y].isStart = true;
 
 		this.cellStrokeWidth = 2;
 
