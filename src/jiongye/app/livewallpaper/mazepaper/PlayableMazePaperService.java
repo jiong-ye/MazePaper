@@ -3,14 +3,10 @@ package jiongye.app.livewallpaper.mazepaper;
 import org.andengine.engine.camera.Camera;
 import org.andengine.engine.options.EngineOptions;
 import org.andengine.engine.options.ScreenOrientation;
-import org.andengine.engine.options.resolutionpolicy.FillResolutionPolicy;
 import org.andengine.engine.options.resolutionpolicy.RatioResolutionPolicy;
-import org.andengine.entity.primitive.Line;
 import org.andengine.entity.primitive.Rectangle;
 import org.andengine.entity.scene.Scene;
 import org.andengine.entity.scene.background.Background;
-import org.andengine.entity.sprite.AnimatedSprite;
-import org.andengine.entity.sprite.Sprite;
 import org.andengine.extension.physics.box2d.PhysicsConnector;
 import org.andengine.extension.physics.box2d.PhysicsFactory;
 import org.andengine.extension.physics.box2d.PhysicsWorld;
@@ -18,28 +14,20 @@ import org.andengine.extension.physics.box2d.util.Vector2Pool;
 import org.andengine.extension.ui.livewallpaper.BaseLiveWallpaperService;
 import org.andengine.input.sensor.acceleration.AccelerationData;
 import org.andengine.input.sensor.acceleration.IAccelerationListener;
-import org.andengine.opengl.texture.TextureOptions;
 import org.andengine.opengl.texture.atlas.bitmap.BitmapTextureAtlas;
-import org.andengine.opengl.texture.atlas.bitmap.BitmapTextureAtlasTextureRegionFactory;
 import org.andengine.opengl.texture.region.TextureRegion;
 import org.andengine.opengl.util.GLState;
 import org.andengine.opengl.vbo.VertexBufferObjectManager;
 import org.andengine.util.color.Color;
-import org.andengine.util.debug.Debug;
-
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.physics.box2d.Body;
 import com.badlogic.gdx.physics.box2d.FixtureDef;
 import com.badlogic.gdx.physics.box2d.BodyDef.BodyType;
 
-import android.R.integer;
-import android.graphics.Bitmap;
-import android.graphics.Canvas;
 import android.graphics.Paint;
 import android.graphics.Point;
 import android.hardware.SensorManager;
 import android.util.DisplayMetrics;
-import android.util.Log;
 import android.view.WindowManager;
 
 public class PlayableMazePaperService extends BaseLiveWallpaperService implements IAccelerationListener {
@@ -113,7 +101,6 @@ public class PlayableMazePaperService extends BaseLiveWallpaperService implement
 		
 		if (maze != null) {
 			double distanceLimit = 300;
-			int lineCount = 0;
 			int cWidth = CAMERA_WIDTH;
 			int cHeight = CAMERA_HEIGHT;
 			int cellSize = cWidth < cHeight ? cWidth / maze.rows : cHeight / maze.rows;
@@ -166,6 +153,7 @@ public class PlayableMazePaperService extends BaseLiveWallpaperService implement
 				}
 			}			
 		}
+
 		scene.registerUpdateHandler(this.physicsWorld);
 		
 		pOnCreateSceneCallback.onCreateSceneFinished(scene);
@@ -192,14 +180,14 @@ public class PlayableMazePaperService extends BaseLiveWallpaperService implement
 	}
 	
 	public void drawWall(Scene scene, VertexBufferObjectManager vertexBufferObjectManager, Point a, Point b, Paint p, CellNeighbor position) {
-		Rectangle wall = null;
+		Wall wall = null;
 		Body body = null;
 		
 		//create line
 		switch (position) {
 			case TOP:
 			case BOTTOM:
-				wall = new Rectangle(a.x, a.y, b.x - a.x, p.getStrokeWidth(), vertexBufferObjectManager);
+				wall = new Wall(a.x, a.y, b.x - a.x, p.getStrokeWidth(), vertexBufferObjectManager);
 				wall.setColor(Color.WHITE);
 				
 				body = PhysicsFactory.createBoxBody(this.physicsWorld, wall, BodyType.StaticBody, this.wallFixtureDef);
@@ -207,7 +195,7 @@ public class PlayableMazePaperService extends BaseLiveWallpaperService implement
 				break;
 			case LEFT:
 			case RIGHT:
-				wall = new Rectangle(a.x, a.y, p.getStrokeWidth(), b.y - a.y, vertexBufferObjectManager);
+				wall = new Wall(a.x, a.y, p.getStrokeWidth(), b.y - a.y, vertexBufferObjectManager);
 				wall.setColor(Color.WHITE);
 				
 				body = PhysicsFactory.createBoxBody(this.physicsWorld, wall, BodyType.StaticBody, this.wallFixtureDef);
