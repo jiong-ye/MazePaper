@@ -11,4 +11,10 @@
         android:key="maze_cols"
         android:summary="How many columns? (Number only!)"
         android:title="Columns" />
+    <ListPreference
+        android:key="maze_solve_speed"
+        android:summary="How fast it solves the maze? (the faster it is, the more juice it uses.)"
+        android:title="Speed"
+        android:entries="@array/solve_speed_names"
+        android:entryValues="@array/solve_speed_values" />
 </PreferenceScreen>

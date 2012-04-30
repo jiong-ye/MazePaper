@@ -28,8 +28,7 @@
         <activity
             android:name=".MazePaperSettings"
             android:label="MazePaper Settings"
-            android:exported="true"
-            android:theme="@android:style/Theme.Light.WallpaperSettings">
+            android:exported="true">
         </activity>
     </application>
 </manifest>

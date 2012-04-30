@@ -1,4 +1,18 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Maze WallPaper</string>
+    <string-array name="solve_speed_names">
+        <item>Slow</item>
+        <item>Medium</item>
+        <item>Fast</item>
+        <item>Really Fast</item>
+        <item>Crazy Fast</item>
+    </string-array>
+    <string-array name="solve_speed_values">
+        <item>slow</item>
+        <item>medium</item>
+        <item>fast</item>
+        <item>really_fast</item>
+        <item>crazy_fast</item>
+    </string-array>
 </resources>

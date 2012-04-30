@@ -9,6 +9,7 @@ import android.graphics.Paint;
 import android.graphics.Point;
 import android.os.Handler;
 import android.service.wallpaper.WallpaperService;
+import android.util.Log;
 import android.view.SurfaceHolder;
 
 public class MazePaperService extends WallpaperService {
@@ -39,6 +40,8 @@ public class MazePaperService extends WallpaperService {
 		private int mazeRows = 5;
 		private int mazeCols = 5;
 		private Maze maze;
+		
+		private String solveSpeed;
 
 		private int rowDrawNumber = 1;
 
@@ -59,10 +62,13 @@ public class MazePaperService extends WallpaperService {
 			try{
 				this.mazeRows = Integer.parseInt(pref.getString("maze_rows", "10"));
 				this.mazeCols = Integer.parseInt(pref.getString("maze_cols", "10"));
+				this.solveSpeed = pref.getString("maze_solve_speed", "slow");
+				
 			}
 			catch(Exception exp){
 				this.mazeRows = 10;
 				this.mazeCols = 10;
+				this.solveSpeed = "slow";
 			}
 			generateMaze();
 		}
@@ -88,6 +94,37 @@ public class MazePaperService extends WallpaperService {
 			}
 		}
 
+		void drawFrame() {
+			final SurfaceHolder holder = getSurfaceHolder();
+			int speed = 750;
+			
+			Canvas c = null;
+			try {
+				c = holder.lockCanvas();
+				if (c != null) {
+					drawMaze(c);
+				}
+			} finally {
+				if (c != null)
+					holder.unlockCanvasAndPost(c);
+			}
+
+			// Reschedule the next redraw
+			mHandler.removeCallbacks(mdrawMaze);
+			if (mVisible) {
+				if(this.solveSpeed.equals("crazy_fast"))
+					speed = 5;
+				else if(this.solveSpeed.equals("really_fast"))
+					speed = 50;
+				else if(this.solveSpeed.equals("fast"))
+					speed = 150;
+				else if(this.solveSpeed.equals("medium"))
+					speed = 500;
+				
+				mHandler.postDelayed(mdrawMaze, speed);
+			}
+		}
+		
 		@Override
 		public void onSurfaceChanged(SurfaceHolder holder, int format, int width, int height) {
 			super.onSurfaceChanged(holder, format, width, height);
@@ -193,32 +230,6 @@ public class MazePaperService extends WallpaperService {
 			}
 		}
 
-		/*
-		 * Draw one frame of the animation. This method gets called repeatedly
-		 * by posting a delayed Runnable. You can do any drawing you want in
-		 * here. This example draws a wireframe cube.
-		 */
-		void drawFrame() {
-			final SurfaceHolder holder = getSurfaceHolder();
-
-			Canvas c = null;
-			try {
-				c = holder.lockCanvas();
-				if (c != null) {
-					drawMaze(c);
-				}
-			} finally {
-				if (c != null)
-					holder.unlockCanvasAndPost(c);
-			}
-
-			// Reschedule the next redraw
-			mHandler.removeCallbacks(mdrawMaze);
-			if (mVisible) {
-				mHandler.postDelayed(mdrawMaze, 750);
-			}
-		}
-
 		void drawMaze(Canvas c) {
 			int cWidth = c.getWidth();
 			int cHeight = c.getHeight();
@@ -294,8 +305,8 @@ public class MazePaperService extends WallpaperService {
 					maze.player.pos = new Point(playerCell.pos.x, playerCell.pos.y);
 					
 					// draw player
-					c.drawCircle(playerCell.pos.y * cellSize + horizontalOffset + maze.player.offset.x + 1, 
-								 playerCell.pos.x * cellSize + verticalOffset + maze.player.offset.y + 1, 
+					c.drawCircle(playerCell.pos.y * cellSize + horizontalOffset + maze.player.offset.x, 
+								 playerCell.pos.x * cellSize + verticalOffset + maze.player.offset.y, 
 								 maze.player.radius, 
 								 maze.player.paint);
 
