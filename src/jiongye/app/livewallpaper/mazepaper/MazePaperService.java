@@ -59,6 +59,7 @@ public class MazePaperService extends WallpaperService {
 		}
 		
 		public void onSharedPreferenceChanged(SharedPreferences pref, String key){
+			//grab wallpaper preference
 			try{
 				this.mazeRows = Integer.parseInt(pref.getString("maze_rows", "10"));
 				this.mazeCols = Integer.parseInt(pref.getString("maze_cols", "10"));
@@ -109,7 +110,7 @@ public class MazePaperService extends WallpaperService {
 					holder.unlockCanvasAndPost(c);
 			}
 
-			// Reschedule the next redraw
+			// Reschedule the next redraw based on speed selected
 			mHandler.removeCallbacks(mdrawMaze);
 			if (mVisible) {
 				if(this.solveSpeed.equals("crazy_fast"))
