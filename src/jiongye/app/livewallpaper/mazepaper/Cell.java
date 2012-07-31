@@ -15,6 +15,7 @@ public class Cell {
 	
 	//information about surrouding 4 walls
 	public HashMap<CellNeighbor, Boolean> walls;
+	public HashMap<CellNeighbor, Wall> wallBodies;
 	
 	//entry and exit markers
 	public boolean isStart = false;
@@ -27,6 +28,18 @@ public class Cell {
 		this.playerVisited = false;
 		
 		this.walls = new HashMap<CellNeighbor, Boolean>();
+		this.walls.put(CellNeighbor.TOP, true);
+		this.walls.put(CellNeighbor.RIGHT, true);
+		this.walls.put(CellNeighbor.BOTTOM, true);
+		this.walls.put(CellNeighbor.LEFT, true);
+		
+		this.wallBodies = new HashMap<CellNeighbor, Wall>();
+	}
+
+	public void reset(){
+		this.visited = false;
+		this.playerVisited = false;
+		
 		this.walls.put(CellNeighbor.TOP, true);
 		this.walls.put(CellNeighbor.RIGHT, true);
 		this.walls.put(CellNeighbor.BOTTOM, true);

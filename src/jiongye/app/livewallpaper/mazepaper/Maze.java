@@ -71,6 +71,18 @@ public class Maze {
 		this.playerVisitedCellPaint.setStyle(Paint.Style.FILL);
 	}
 	
+	public void regenerate(){
+		this.solved = false;
+		
+		for (int i = 0; i < rows; i++) {
+			for (int j = 0; j < columns; j++) {
+				this.cells[i][j].reset();
+			}
+		}
+		
+		createMaze();
+	}
+	
 	public void createMaze() {
 		Cell curCell = this.getCell(0, 0);
 		curCell.isEnd = true;
