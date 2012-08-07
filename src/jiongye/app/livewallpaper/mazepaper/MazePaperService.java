@@ -107,7 +107,7 @@ public class MazePaperService extends WallpaperService {
 			maze = new Maze(mazeRows, mazeCols);
 			maze.createMaze();
 			
-			maze.player = new Player();			
+			maze.cpu = new CPU();			
 		}
 
 		/*
@@ -142,9 +142,9 @@ public class MazePaperService extends WallpaperService {
 			int cellSize = cWidth < cHeight ? cWidth / mazeRows : cHeight / mazeRows;
 			int verticalOffset = cHeight > cellSize * mazeRows ? (cHeight - (cellSize * mazeRows)) / 2 : 40;
 			int horizontalOffset = cWidth > cellSize * mazeCols ? (cWidth - (cellSize * mazeCols)) / 2 : 0;
-			Point playerPos = null;
+			Point cpuPos = null;
 
-			maze.player.setRadius(cellSize);
+			maze.cpu.setRadius(cellSize);
 
 			c.save();
 			c.drawColor(0xff000000);
@@ -186,49 +186,49 @@ public class MazePaperService extends WallpaperService {
 										bottomRight.y - maze.cellStrokeWidth, maze.endCellPaint);
 						}
 						//a cell visited by the play but not on his track to destination
-						else if (cell.playerVisited && !maze.player.track.contains(cell.pos)) {
+						else if (cell.cpuVisited && !maze.cpu.track.contains(cell.pos)) {
 							c.drawRect(	topLeft.x + maze.cellStrokeWidth + 3, 
 										topLeft.y + maze.cellStrokeWidth + 3, 
 										bottomRight.x - maze.cellStrokeWidth - 3, 
 										bottomRight.y - maze.cellStrokeWidth - 3, 
-										maze.playerVisitedCellPaint);
-						//set player at the starting cell
-						} else if (cell.isStart && maze.player != null && maze.player.pos == null) {
-							cell.playerVisited = true;
-							playerPos = new Point(cell.pos.x, cell.pos.y);
-							maze.player.track.push(new Point(cell.pos.x, cell.pos.y));
+										maze.cpuVisitedCellPaint);
+						//set cpu at the starting cell
+						} else if (cell.isStart && maze.cpu != null && maze.cpu.pos == null) {
+							cell.cpuVisited = true;
+							cpuPos = new Point(cell.pos.x, cell.pos.y);
+							maze.cpu.track.push(new Point(cell.pos.x, cell.pos.y));
 						}
 					}
 				}
 			}
 
-			// dont try to move player if still drawing cells
+			// dont try to move cpu if still drawing cells
 			if (rowDrawNumber < mazeRows) {
 				rowDrawNumber += 1;
 			} else {
-				Cell playerCell = maze.getCell(playerPos != null ? playerPos : maze.player.pos);
-				if (playerCell != null) {
-					maze.player.pos = new Point(playerCell.pos.x, playerCell.pos.y);
+				Cell cpuCell = maze.getCell(cpuPos != null ? cpuPos : maze.cpu.pos);
+				if (cpuCell != null) {
+					maze.cpu.pos = new Point(cpuCell.pos.x, cpuCell.pos.y);
 					
-					// draw player
-					c.drawCircle(playerCell.pos.y * cellSize + horizontalOffset + maze.player.offset.x + 1, 
-								 playerCell.pos.x * cellSize + verticalOffset + maze.player.offset.y + 1, 
-								 maze.player.radius, 
-								 maze.player.paint);
+					// draw cpu
+					c.drawCircle(cpuCell.pos.y * cellSize + horizontalOffset + maze.cpu.offset.x + 1, 
+								 cpuCell.pos.x * cellSize + verticalOffset + maze.cpu.offset.y + 1, 
+								 maze.cpu.radius, 
+								 maze.cpu.paint);
 
-					// draw players track;
-					if (maze.player.track.size() > 1) {
-						for (int i = 0; i < maze.player.track.size() - 1; i++) {
-							Point pathFrom = new Point( maze.player.track.get(i).y * cellSize + horizontalOffset + cellSize / 2, 
-														maze.player.track.get(i).x * cellSize + verticalOffset + cellSize / 2);
-							Point pathTo = new Point(maze.player.track.get(i + 1).y * cellSize + horizontalOffset + cellSize / 2, 
-													 maze.player.track.get(i + 1).x * cellSize + verticalOffset + cellSize / 2);
+					// draw cpus track;
+					if (maze.cpu.track.size() > 1) {
+						for (int i = 0; i < maze.cpu.track.size() - 1; i++) {
+							Point pathFrom = new Point( maze.cpu.track.get(i).y * cellSize + horizontalOffset + cellSize / 2, 
+														maze.cpu.track.get(i).x * cellSize + verticalOffset + cellSize / 2);
+							Point pathTo = new Point(maze.cpu.track.get(i + 1).y * cellSize + horizontalOffset + cellSize / 2, 
+													 maze.cpu.track.get(i + 1).x * cellSize + verticalOffset + cellSize / 2);
 
-							drawLine(c, pathFrom, pathTo, maze.player.pathPaint);
+							drawLine(c, pathFrom, pathTo, maze.cpu.pathPaint);
 						}
 					}
 					if (!maze.solved){
-						maze.playerNextMove();
+						maze.cpuNextMove();
 					}
 					else {
 						generateMaze();

@@ -2,13 +2,11 @@ package jiongye.app.livewallpaper.mazepaper;
 
 import java.util.Stack;
 
-import android.R.integer;
 import android.graphics.Paint;
 import android.graphics.Point;
 import android.graphics.Paint.Cap;
 
-public class Player {
-	public boolean isAI;
+public class CPU {
 	public int radius;
 	
 	public Point pos;
@@ -19,8 +17,7 @@ public class Player {
 	
 	public Stack<Point> track;
 	
-	public Player() {
-		this.isAI = true;
+	public CPU() {
 		this.radius = 5;
 		this.track = new Stack<Point>();
 		this.offset = new Point();

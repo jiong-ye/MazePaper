@@ -21,7 +21,6 @@ import org.andengine.opengl.util.GLState;
 import org.andengine.opengl.vbo.VertexBufferObjectManager;
 import org.andengine.util.color.Color;
 import com.badlogic.gdx.math.Vector2;
-import com.badlogic.gdx.physics.box2d.Body;
 import com.badlogic.gdx.physics.box2d.FixtureDef;
 import com.badlogic.gdx.physics.box2d.BodyDef.BodyType;
 
@@ -29,12 +28,11 @@ import android.graphics.Paint;
 import android.graphics.Point;
 import android.hardware.SensorManager;
 import android.util.DisplayMetrics;
-import android.util.Log;
 import android.view.WindowManager;
 
 public class PlayableMazePaperService extends BaseLiveWallpaperService implements IAccelerationListener {
 	Maze maze;
-
+		
 	private int rows = 5;
 	private int columns = 4;
 
@@ -44,7 +42,8 @@ public class PlayableMazePaperService extends BaseLiveWallpaperService implement
 	private Camera camera;
 	private PhysicsWorld physicsWorld;
 
-	Rectangle playerRectangle;
+	Human human;
+	
 	Rectangle endRectangle;
 
 	BitmapTextureAtlasSource bitmapTextureAtlasSource;
@@ -66,7 +65,7 @@ public class PlayableMazePaperService extends BaseLiveWallpaperService implement
 
 	@Override
 	public void onCreate() {
-		// android.os.Debug.waitForDebugger();
+//		android.os.Debug.waitForDebugger();
 		super.onCreate();
 	}
 
@@ -87,7 +86,7 @@ public class PlayableMazePaperService extends BaseLiveWallpaperService implement
 	public void onCreateResources(OnCreateResourcesCallback pOnCreateResourcesCallback) throws Exception {
 		maze = new Maze(rows, columns);
 		maze.createMaze();
-
+		
 		pOnCreateResourcesCallback.onCreateResourcesFinished();
 	}
 
@@ -112,12 +111,12 @@ public class PlayableMazePaperService extends BaseLiveWallpaperService implement
 			@Override
 			public void onUpdate(float pSecondsElapsed) {
 				if (endRectangle != null) {
-					if (playerRectangle.collidesWith(endRectangle)) {
-						endRectangle.setColor(Color.BLUE);
-
-						// new game
+					if (human.collidesWith(endRectangle)) {
+						endRectangle.setColor(Color.BLUE);					
+						
+						human.moveTo(maze.getStartCell().coord);
 						maze.regenerate();
-						setUpMazeScene(scene);
+						regenerateMazeScene(scene);
 					}
 				}
 			}
@@ -160,7 +159,9 @@ public class PlayableMazePaperService extends BaseLiveWallpaperService implement
 						bottomLeft = new Point(j * cellSize + horizontalOffset, (i + 1) * cellSize + verticalOffset);
 						bottomRight = new Point((j + 1) * cellSize + horizontalOffset, (i + 1) * cellSize + verticalOffset);
 
-						// determine which wall gets drawn
+						maze.getCell(i, j).setCoord(topLeft);
+						
+						// determine which wall gets shown
 						for (CellNeighbor neighbor : CellNeighbor.values()) {
 							tempWall = null;
 
@@ -198,30 +199,20 @@ public class PlayableMazePaperService extends BaseLiveWallpaperService implement
 						// this cell is the destination
 						if (cell.isEnd) {
 							if (endRectangle == null) {
-								endRectangle = new Rectangle(topLeft.x + maze.cellStrokeWidth, topLeft.y + maze.cellStrokeWidth, cellSize
-										- maze.cellStrokeWidth, cellSize - maze.cellStrokeWidth, vertexBufferObjectManager);
+								endRectangle = new Rectangle(topLeft.x + maze.cellStrokeWidth, topLeft.y + maze.cellStrokeWidth, cellSize - maze.cellStrokeWidth, cellSize - maze.cellStrokeWidth, vertexBufferObjectManager);
 								endRectangle.setColor(Color.GREEN);
-
 								scene.attachChild(endRectangle);
 							}
 						}
 
 						if (cell.isStart) {
-							if (playerRectangle == null) {
-								playerRectangle = new Rectangle(topLeft.x + cellSize / 4, topLeft.y + cellSize / 4, cellSize / 2, cellSize / 2,
-										vertexBufferObjectManager);
-								playerRectangle.setColor(Color.RED);
-
-								Body playerBody = PhysicsFactory.createBoxBody(physicsWorld, playerRectangle, BodyType.DynamicBody,
-										this.playerFixtureDef);
-								physicsWorld.registerPhysicsConnector(new PhysicsConnector(playerRectangle, playerBody));
-
-								playerRectangle.registerUpdateHandler(physicsWorld);
-
-								scene.attachChild(playerRectangle);
-							} 
-							else {
-								playerRectangle.setPosition(topLeft.x + cellSize / 4, topLeft.y + cellSize / 4);
+							if (human == null) {
+								human = new Human(new Rectangle(topLeft.x + cellSize / 4, topLeft.y + cellSize / 4, cellSize / 2, cellSize / 2, vertexBufferObjectManager), Color.RED);
+								
+								human.body = PhysicsFactory.createBoxBody(physicsWorld, human.rectangle, BodyType.DynamicBody, this.playerFixtureDef);
+								physicsWorld.registerPhysicsConnector(new PhysicsConnector(human.rectangle, human.body));
+								human.rectangle.registerUpdateHandler(physicsWorld);
+								scene.attachChild(human.rectangle);
 							}
 						}
 					}
@@ -230,26 +221,51 @@ public class PlayableMazePaperService extends BaseLiveWallpaperService implement
 		}
 	}
 
+	public void regenerateMazeScene(Scene scene) {
+		if(maze.regenerated){
+			Cell cell;
+			
+			for (int i = 0; i < maze.rows; i++) {
+				for (int j = 0; j < maze.columns; j++) {
+					cell = maze.getCell(i, j);
+					
+					// determine which wall gets shown
+					for (CellNeighbor neighbor : CellNeighbor.values()) {
+						Wall wall = cell.wallBodies.get(neighbor);
+						if(wall != null){
+							if (cell.walls.get(neighbor)){
+								wall.show();
+//								wall.setBodyFixture(wallFixtureDef);
+							} else {
+								wall.hide();
+//								wall.setBodyFixture(doorFixtureDef);
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+	
 	public Wall drawWall(Scene scene, VertexBufferObjectManager vertexBufferObjectManager, Point a, Point b, Paint p, CellNeighbor position,
 			boolean visible) {
 		Wall wall = null;
-		Body body = null;
 
 		// create line
 		switch (position) {
 			case TOP:
 			case BOTTOM:
 				wall = new Wall(a.x, a.y, b.x - a.x, p.getStrokeWidth(), vertexBufferObjectManager);
-
-				body = PhysicsFactory.createBoxBody(this.physicsWorld, wall, BodyType.StaticBody, visible ? wallFixtureDef : doorFixtureDef);
-				this.physicsWorld.registerPhysicsConnector(new PhysicsConnector(wall, body));
+				
+				wall.body = PhysicsFactory.createBoxBody(this.physicsWorld, wall, BodyType.StaticBody, visible ? wallFixtureDef : doorFixtureDef);
+				this.physicsWorld.registerPhysicsConnector(new PhysicsConnector(wall, wall.body));
 				break;
 			case LEFT:
 			case RIGHT:
 				wall = new Wall(a.x, a.y, p.getStrokeWidth(), b.y - a.y, vertexBufferObjectManager);
 
-				body = PhysicsFactory.createBoxBody(this.physicsWorld, wall, BodyType.StaticBody, visible ? wallFixtureDef : doorFixtureDef);
-				this.physicsWorld.registerPhysicsConnector(new PhysicsConnector(wall, body));
+				wall.body = PhysicsFactory.createBoxBody(this.physicsWorld, wall, BodyType.StaticBody, visible ? wallFixtureDef : doorFixtureDef);
+				this.physicsWorld.registerPhysicsConnector(new PhysicsConnector(wall, wall.body));
 				break;
 		}
 

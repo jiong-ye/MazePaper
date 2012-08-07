@@ -13,17 +13,18 @@ public class Maze {
 	public int columns;
 
 	public Cell[][] cells;
-	public Player player;
+	public CPU cpu;
 
 	public Point startPoint;
 	public Point endPoint;
 	
 	public Paint cellPaint;
 	public Paint endCellPaint;
-	public Paint playerVisitedCellPaint;
+	public Paint cpuVisitedCellPaint;
 		
 	public int cellStrokeWidth;
 
+	public boolean regenerated;
 	public boolean solved;
 
 	public Maze(int _rows, int _columns){
@@ -35,6 +36,7 @@ public class Maze {
 	}
 	
 	public void init(int _rows, int _columns, Point _start, Point _end){
+		this.regenerated = false;
 		this.solved = false;
 
 		this.rows = _rows;
@@ -66,12 +68,13 @@ public class Maze {
 		this.endCellPaint.setAntiAlias(true);
 		this.endCellPaint.setStyle(Paint.Style.FILL);
 		
-		this.playerVisitedCellPaint = new Paint();
-		this.playerVisitedCellPaint.setColor(0x66c3c3c3);
-		this.playerVisitedCellPaint.setStyle(Paint.Style.FILL);
+		this.cpuVisitedCellPaint = new Paint();
+		this.cpuVisitedCellPaint.setColor(0x66c3c3c3);
+		this.cpuVisitedCellPaint.setStyle(Paint.Style.FILL);
 	}
 	
 	public void regenerate(){
+		this.regenerated = true;
 		this.solved = false;
 		
 		for (int i = 0; i < rows; i++) {
@@ -174,6 +177,14 @@ public class Maze {
 	public Cell getCell(Point p) {
 		return this.cells[p.x][p.y] != null ? this.cells[p.x][p.y] : null;
 	}
+	
+	public Cell getEndCell(){
+		return getCell(this.endPoint);
+	}
+	
+	public Cell getStartCell() {
+		return getCell(this.startPoint);
+	}
 
 	public Cell getNeighbor(Point p, CellNeighbor position) {
 		switch (position) {
@@ -193,44 +204,44 @@ public class Maze {
 		return null;
 	}
 
-	public void playerNextMove() {
-		if (this.getCell(this.player.pos).isEnd) {
+	public void cpuNextMove() {
+		if (this.getCell(this.cpu.pos).isEnd) {
 			this.solved = true;
 		}
 
 		if (!this.solved) {
 			// get all neighbors that havent been visited before
 			Stack<Point> neighbors = new Stack<Point>();
-			Cell curCell = this.getCell(this.player.pos);
+			Cell curCell = this.getCell(this.cpu.pos);
 
-			if (!curCell.walls.get(CellNeighbor.TOP) && !this.getNeighbor(this.player.pos, CellNeighbor.TOP).playerVisited){
-				neighbors.push(new Point(this.player.pos.x - 1, this.player.pos.y));
+			if (!curCell.walls.get(CellNeighbor.TOP) && !this.getNeighbor(this.cpu.pos, CellNeighbor.TOP).cpuVisited){
+				neighbors.push(new Point(this.cpu.pos.x - 1, this.cpu.pos.y));
 			}
 
-			if (!curCell.walls.get(CellNeighbor.RIGHT) && !this.getNeighbor(this.player.pos, CellNeighbor.RIGHT).playerVisited){
-				neighbors.push(new Point(this.player.pos.x, this.player.pos.y + 1));
+			if (!curCell.walls.get(CellNeighbor.RIGHT) && !this.getNeighbor(this.cpu.pos, CellNeighbor.RIGHT).cpuVisited){
+				neighbors.push(new Point(this.cpu.pos.x, this.cpu.pos.y + 1));
 			}
 
-			if (!curCell.walls.get(CellNeighbor.BOTTOM) && !this.getNeighbor(this.player.pos, CellNeighbor.BOTTOM).playerVisited){
-				neighbors.push(new Point(this.player.pos.x + 1, this.player.pos.y));
+			if (!curCell.walls.get(CellNeighbor.BOTTOM) && !this.getNeighbor(this.cpu.pos, CellNeighbor.BOTTOM).cpuVisited){
+				neighbors.push(new Point(this.cpu.pos.x + 1, this.cpu.pos.y));
 			}
 			
-			if (!curCell.walls.get(CellNeighbor.LEFT) && !this.getNeighbor(this.player.pos, CellNeighbor.LEFT).playerVisited){
-				neighbors.push(new Point(this.player.pos.x, this.player.pos.y-1));
+			if (!curCell.walls.get(CellNeighbor.LEFT) && !this.getNeighbor(this.cpu.pos, CellNeighbor.LEFT).cpuVisited){
+				neighbors.push(new Point(this.cpu.pos.x, this.cpu.pos.y-1));
 			}
 			
 			switch (neighbors.size()) {
 				case 0:
-					if (this.player.track.size() > 0)
-						this.player.pos = this.player.track.pop();
+					if (this.cpu.track.size() > 0)
+						this.cpu.pos = this.cpu.track.pop();
 					break;
 				case 1:
 					int nextX = neighbors.get(0).x;
 					int nextY = neighbors.get(0).y;
 					
-					this.player.pos = new Point(nextX, nextY);
-					this.cells[nextX][nextY].playerVisited = true;
-					this.player.track.push(new Point(nextX,nextY));
+					this.cpu.pos = new Point(nextX, nextY);
+					this.cells[nextX][nextY].cpuVisited = true;
+					this.cpu.track.push(new Point(nextX,nextY));
 					break;
 				default:
 					Random rand = new Random();
@@ -238,9 +249,9 @@ public class Maze {
 					int randX = neighbors.get(randomNeighborIndex).x;
 					int randY = neighbors.get(randomNeighborIndex).y;
 					
-					this.player.pos = new Point(randX, randY);
-					this.cells[randX][randY].playerVisited = true;
-					this.player.track.push(new Point(randX,randY));
+					this.cpu.pos = new Point(randX, randY);
+					this.cells[randX][randY].cpuVisited = true;
+					this.cpu.track.push(new Point(randX,randY));
 					break;
 			}
 		}
