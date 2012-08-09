@@ -12,7 +12,7 @@ public class Wall extends Rectangle {
 	
 	public Wall(float x, float y, float width, float height, VertexBufferObjectManager vertexBufferObjectManager) {
 		super(x, y, width, height, vertexBufferObjectManager);
-		this.setColor(Color.WHITE);
+		this.setColor(new Color(1f, 1f, 1f, 0.5f));
 		
 		this.body = null;
 	}

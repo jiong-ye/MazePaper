@@ -34,8 +34,8 @@ import android.view.WindowManager;
 public class PlayableMazePaperService extends BaseLiveWallpaperService implements IAccelerationListener {
 	Maze maze;
 		
-	private int rows = 8;
-	private int columns = 5;
+	private int rows = 15;
+	private int columns = 13;
 
 	private static int CAMERA_WIDTH = 480;
 	private static int CAMERA_HEIGHT = 720;
@@ -61,9 +61,9 @@ public class PlayableMazePaperService extends BaseLiveWallpaperService implement
 	final static Filter WALLFILTER = new Filter();
 	final static Filter DOORFILTER = new Filter();
 	
-	FixtureDef wallFixtureDef = PhysicsFactory.createFixtureDef(1, 0, 0.2f);
-	FixtureDef doorFixtureDef = PhysicsFactory.createFixtureDef(1, 0, 0.2f);
-	FixtureDef playerFixtureDef = PhysicsFactory.createFixtureDef(10, .2f, .3f);
+	FixtureDef wallFixtureDef = PhysicsFactory.createFixtureDef(0, 0, 0.1f);
+	FixtureDef doorFixtureDef = PhysicsFactory.createFixtureDef(0, 0, 0.2f);
+	FixtureDef playerFixtureDef = PhysicsFactory.createFixtureDef(1, 0.1f, 0.2f);
 
 	TextureRegion textureRegion;
 
