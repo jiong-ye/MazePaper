@@ -21,6 +21,7 @@ import org.andengine.opengl.util.GLState;
 import org.andengine.opengl.vbo.VertexBufferObjectManager;
 import org.andengine.util.color.Color;
 import com.badlogic.gdx.math.Vector2;
+import com.badlogic.gdx.physics.box2d.Filter;
 import com.badlogic.gdx.physics.box2d.FixtureDef;
 import com.badlogic.gdx.physics.box2d.BodyDef.BodyType;
 
@@ -33,8 +34,8 @@ import android.view.WindowManager;
 public class PlayableMazePaperService extends BaseLiveWallpaperService implements IAccelerationListener {
 	Maze maze;
 		
-	private int rows = 5;
-	private int columns = 4;
+	private int rows = 8;
+	private int columns = 5;
 
 	private static int CAMERA_WIDTH = 480;
 	private static int CAMERA_HEIGHT = 720;
@@ -56,10 +57,13 @@ public class PlayableMazePaperService extends BaseLiveWallpaperService implement
 
 	final static short WALLMASK = WALLCATEGORY + PLAYERCATEGORY;
 	final static short DOORMASK = DOORCATEGORY;
-
-	FixtureDef wallFixtureDef = PhysicsFactory.createFixtureDef(1, 0, 0.2f, false, WALLCATEGORY, WALLMASK, (short) 0);
-	FixtureDef doorFixtureDef = PhysicsFactory.createFixtureDef(1, 0, 0.2f, false, DOORCATEGORY, DOORMASK, (short) 0);
-	FixtureDef playerFixtureDef = PhysicsFactory.createFixtureDef(10, .2f, .3f, false, WALLCATEGORY, WALLMASK, (short) 0);
+	
+	final static Filter WALLFILTER = new Filter();
+	final static Filter DOORFILTER = new Filter();
+	
+	FixtureDef wallFixtureDef = PhysicsFactory.createFixtureDef(1, 0, 0.2f);
+	FixtureDef doorFixtureDef = PhysicsFactory.createFixtureDef(1, 0, 0.2f);
+	FixtureDef playerFixtureDef = PhysicsFactory.createFixtureDef(10, .2f, .3f);
 
 	TextureRegion textureRegion;
 
@@ -86,6 +90,21 @@ public class PlayableMazePaperService extends BaseLiveWallpaperService implement
 	public void onCreateResources(OnCreateResourcesCallback pOnCreateResourcesCallback) throws Exception {
 		maze = new Maze(rows, columns);
 		maze.createMaze();
+		
+		WALLFILTER.categoryBits = WALLCATEGORY;
+		WALLFILTER.maskBits = WALLMASK;
+		
+		DOORFILTER.categoryBits = DOORCATEGORY;
+		DOORFILTER.maskBits = DOORMASK;
+		
+		wallFixtureDef.filter.categoryBits = WALLCATEGORY;
+		wallFixtureDef.filter.maskBits = WALLMASK;
+				
+		doorFixtureDef.filter.categoryBits = DOORCATEGORY;
+		doorFixtureDef.filter.maskBits = DOORMASK;
+		
+		playerFixtureDef.filter.categoryBits = WALLCATEGORY;
+		playerFixtureDef.filter.maskBits = WALLMASK;
 		
 		pOnCreateResourcesCallback.onCreateResourcesFinished();
 	}
@@ -117,6 +136,7 @@ public class PlayableMazePaperService extends BaseLiveWallpaperService implement
 						human.moveTo(maze.getStartCell().coord);
 						maze.regenerate();
 						regenerateMazeScene(scene);
+						endRectangle.setColor(Color.GREEN);
 					}
 				}
 			}
@@ -189,10 +209,12 @@ public class PlayableMazePaperService extends BaseLiveWallpaperService implement
 							if (tempWall != null) {
 								cell.wallBodies.put(neighbor, tempWall);
 
-								if (cell.walls.get(neighbor))
+								if (cell.walls.get(neighbor)){
 									cell.wallBodies.get(neighbor).show();
-								else
+								}
+								else{
 									cell.wallBodies.get(neighbor).hide();
+								}
 							}
 						}
 
@@ -235,10 +257,10 @@ public class PlayableMazePaperService extends BaseLiveWallpaperService implement
 						if(wall != null){
 							if (cell.walls.get(neighbor)){
 								wall.show();
-//								wall.setBodyFixture(wallFixtureDef);
+								wall.body.getFixtureList().get(0).setFilterData(WALLFILTER);
 							} else {
 								wall.hide();
-//								wall.setBodyFixture(doorFixtureDef);
+								wall.body.getFixtureList().get(0).setFilterData(DOORFILTER);
 							}
 						}
 					}

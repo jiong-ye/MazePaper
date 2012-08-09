@@ -25,9 +25,10 @@ public class Wall extends Rectangle {
 		this.setVisible(true);
 	}
 	
-	public void setBodyFixture(FixtureDef fixtureDef) {
+	public void setBodyFixture(FixtureDef newFixtureDef) {
 		if(this.body != null){
-			this.body.createFixture(fixtureDef);
+			this.body.destroyFixture(null);
+			this.body.createFixture(newFixtureDef);
 		}
 	}
 }
