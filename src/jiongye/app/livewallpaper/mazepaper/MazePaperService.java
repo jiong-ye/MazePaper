@@ -36,7 +36,7 @@ public class MazePaperService extends WallpaperService {
 		implements SharedPreferences.OnSharedPreferenceChangeListener {
 		
 		private SharedPreferences preferences;
-		
+
 		private int mazeRows = 5;
 		private int mazeCols = 5;
 		private Maze maze;
@@ -129,12 +129,12 @@ public class MazePaperService extends WallpaperService {
 		@Override
 		public void onSurfaceChanged(SurfaceHolder holder, int format, int width, int height) {
 			super.onSurfaceChanged(holder, format, width, height);
+			
 		}
 
 		@Override
 		public void onSurfaceCreated(SurfaceHolder holder) {
 			super.onSurfaceCreated(holder);
-			generateMaze();
 		}
 
 		@Override
@@ -146,89 +146,9 @@ public class MazePaperService extends WallpaperService {
 
 		void generateMaze() {
 			maze = new Maze(mazeRows, mazeCols);
-			maze.player = new Player();
-
-			Cell curCell = maze.getCell(0, 0);
-			curCell.isEnd = true;
-			int cellsRemain = mazeRows * mazeCols;
-			Stack<Point> track = new Stack<Point>();
-
-			curCell.visited = true;
-			while (cellsRemain > 0) {
-				if (curCell.visited)
-					cellsRemain--;
-
-				curCell.visited = true;
-
-				// check which neighbor hasn't been visited
-				Stack<Point> neighbors = new Stack<Point>();
-
-				// top neighbor
-				if (curCell.pos.x > 0 && !maze.getNeighbor(curCell.pos, CellNeighbor.TOP).visited)
-					neighbors.push(new Point(curCell.pos.x - 1, curCell.pos.y));
-
-				// right neighbor
-				if (curCell.pos.y < mazeCols - 1 && !maze.getNeighbor(curCell.pos, CellNeighbor.RIGHT).visited)
-					neighbors.push(new Point(curCell.pos.x, curCell.pos.y + 1));
-
-				// bottom neighbor
-				if (curCell.pos.x < mazeRows - 1 && !maze.getNeighbor(curCell.pos, CellNeighbor.BOTTOM).visited)
-					neighbors.push(new Point(curCell.pos.x + 1, curCell.pos.y));
-
-				// left neighbor
-				if (curCell.pos.y > 0 && !maze.getNeighbor(curCell.pos, CellNeighbor.LEFT).visited)
-					neighbors.push(new Point(curCell.pos.x, curCell.pos.y - 1));
-
-				// there are unvisited neighbors
-				if (neighbors.size() > 0) {
-					Random randomNeighbor = new Random();
-					int neighborIndex = randomNeighbor.nextInt(neighbors.size());
-					Point neighborPos = null;
-
-					// get a random neighbor
-					neighborPos = neighbors.get(neighborIndex);
-
-					if (neighborPos != null) {
-						Cell newCell = maze.getCell(neighborPos);
-
-						if (newCell != null) {
-							// check neighbor's position relative to current
-							// cell
-							// top cell
-							if (newCell.pos.x < curCell.pos.x) {
-								newCell.walls.put(CellNeighbor.BOTTOM, false);
-								curCell.walls.put(CellNeighbor.TOP, false);
-							}
-
-							// right
-							if (newCell.pos.y > curCell.pos.y) {
-								newCell.walls.put(CellNeighbor.LEFT, false);
-								curCell.walls.put(CellNeighbor.RIGHT, false);
-							}
-
-							// bottom
-							if (newCell.pos.x > curCell.pos.x) {
-								newCell.walls.put(CellNeighbor.TOP, false);
-								curCell.walls.put(CellNeighbor.BOTTOM, false);
-							}
-
-							// left cell
-							if (newCell.pos.y < curCell.pos.y) {
-								newCell.walls.put(CellNeighbor.RIGHT, false);
-								curCell.walls.put(CellNeighbor.LEFT, false);
-							}
-
-							track.push(new Point(curCell.pos.x, curCell.pos.y));
-							curCell = newCell;
-						}
-					}
-				} else {
-					if (track.size() > 0) {
-						Point previousCell = track.pop();
-						curCell = maze.getCell(previousCell);
-					}
-				}
-			}
+			maze.createMaze();
+			
+			maze.cpu = new CPU();			
 		}
 
 		void drawMaze(Canvas c) {
@@ -237,9 +157,9 @@ public class MazePaperService extends WallpaperService {
 			int cellSize = cWidth < cHeight ? cWidth / mazeRows : cHeight / mazeRows;
 			int verticalOffset = cHeight > cellSize * mazeRows ? (cHeight - (cellSize * mazeRows)) / 2 : 40;
 			int horizontalOffset = cWidth > cellSize * mazeCols ? (cWidth - (cellSize * mazeCols)) / 2 : 0;
-			Point playerPos = null;
+			Point cpuPos = null;
 
-			maze.player.setRadius(cellSize);
+			maze.cpu.setRadius(cellSize);
 
 			c.save();
 			c.drawColor(0xff000000);
@@ -281,49 +201,49 @@ public class MazePaperService extends WallpaperService {
 										bottomRight.y - maze.cellStrokeWidth, maze.endCellPaint);
 						}
 						//a cell visited by the play but not on his track to destination
-						else if (cell.playerVisited && !maze.player.track.contains(cell.pos)) {
+						else if (cell.cpuVisited && !maze.cpu.track.contains(cell.pos)) {
 							c.drawRect(	topLeft.x + maze.cellStrokeWidth + 3, 
 										topLeft.y + maze.cellStrokeWidth + 3, 
 										bottomRight.x - maze.cellStrokeWidth - 3, 
 										bottomRight.y - maze.cellStrokeWidth - 3, 
-										maze.playerVisitedCellPaint);
-						//set player at the starting cell
-						} else if (cell.isStart && maze.player != null && maze.player.pos == null) {
-							cell.playerVisited = true;
-							playerPos = new Point(cell.pos.x, cell.pos.y);
-							maze.player.track.push(new Point(cell.pos.x, cell.pos.y));
+										maze.cpuVisitedCellPaint);
+						//set cpu at the starting cell
+						} else if (cell.isStart && maze.cpu != null && maze.cpu.pos == null) {
+							cell.cpuVisited = true;
+							cpuPos = new Point(cell.pos.x, cell.pos.y);
+							maze.cpu.track.push(new Point(cell.pos.x, cell.pos.y));
 						}
 					}
 				}
 			}
 
-			// dont try to move player if still drawing cells
+			// dont try to move cpu if still drawing cells
 			if (rowDrawNumber < mazeRows) {
 				rowDrawNumber += 1;
 			} else {
-				Cell playerCell = maze.getCell(playerPos != null ? playerPos : maze.player.pos);
-				if (playerCell != null) {
-					maze.player.pos = new Point(playerCell.pos.x, playerCell.pos.y);
+				Cell cpuCell = maze.getCell(cpuPos != null ? cpuPos : maze.cpu.pos);
+				if (cpuCell != null) {
+					maze.cpu.pos = new Point(cpuCell.pos.x, cpuCell.pos.y);
 					
-					// draw player
-					c.drawCircle(playerCell.pos.y * cellSize + horizontalOffset + maze.player.offset.x, 
-								 playerCell.pos.x * cellSize + verticalOffset + maze.player.offset.y, 
-								 maze.player.radius, 
-								 maze.player.paint);
+					// draw cpu
+					c.drawCircle(cpuCell.pos.y * cellSize + horizontalOffset + maze.cpu.offset.x + 1, 
+								 cpuCell.pos.x * cellSize + verticalOffset + maze.cpu.offset.y + 1, 
+								 maze.cpu.radius, 
+								 maze.cpu.paint);
 
-					// draw players track;
-					if (maze.player.track.size() > 1) {
-						for (int i = 0; i < maze.player.track.size() - 1; i++) {
-							Point pathFrom = new Point( maze.player.track.get(i).y * cellSize + horizontalOffset + cellSize / 2, 
-														maze.player.track.get(i).x * cellSize + verticalOffset + cellSize / 2);
-							Point pathTo = new Point(maze.player.track.get(i + 1).y * cellSize + horizontalOffset + cellSize / 2, 
-													 maze.player.track.get(i + 1).x * cellSize + verticalOffset + cellSize / 2);
+					// draw cpus track;
+					if (maze.cpu.track.size() > 1) {
+						for (int i = 0; i < maze.cpu.track.size() - 1; i++) {
+							Point pathFrom = new Point( maze.cpu.track.get(i).y * cellSize + horizontalOffset + cellSize / 2, 
+														maze.cpu.track.get(i).x * cellSize + verticalOffset + cellSize / 2);
+							Point pathTo = new Point(maze.cpu.track.get(i + 1).y * cellSize + horizontalOffset + cellSize / 2, 
+													 maze.cpu.track.get(i + 1).x * cellSize + verticalOffset + cellSize / 2);
 
-							drawLine(c, pathFrom, pathTo, maze.player.pathPaint);
+							drawLine(c, pathFrom, pathTo, maze.cpu.pathPaint);
 						}
 					}
 					if (!maze.solved){
-						maze.playerNextMove();
+						maze.cpuNextMove();
 					}
 					else {
 						generateMaze();
