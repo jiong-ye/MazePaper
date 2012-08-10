@@ -25,15 +25,19 @@ import com.badlogic.gdx.physics.box2d.Filter;
 import com.badlogic.gdx.physics.box2d.FixtureDef;
 import com.badlogic.gdx.physics.box2d.BodyDef.BodyType;
 
+import android.content.SharedPreferences;
 import android.graphics.Paint;
 import android.graphics.Point;
 import android.hardware.SensorManager;
 import android.util.DisplayMetrics;
 import android.view.WindowManager;
 
-public class PlayableMazePaperService extends BaseLiveWallpaperService implements IAccelerationListener {
+public class PlayableMazePaperService extends BaseLiveWallpaperService implements IAccelerationListener, SharedPreferences.OnSharedPreferenceChangeListener {
 	Maze maze;
-		
+	
+	public static final String SHARED_PREFS_NAME = "playable_mazepaper_settings";
+	private SharedPreferences pref;
+	
 	private int rows = 15;
 	private int columns = 13;
 
@@ -68,7 +72,26 @@ public class PlayableMazePaperService extends BaseLiveWallpaperService implement
 	TextureRegion textureRegion;
 
 	@Override
+	public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
+		//grab wallpaper preference
+		try{
+			this.rows = Integer.parseInt(pref.getString("maze_rows", "10"));
+			this.columns = Integer.parseInt(pref.getString("maze_cols", "10"));
+			
+		}
+		catch(Exception exp){
+			this.rows = 10;
+			this.columns = 10;
+		}
+		
+	}
+	 
+	@Override 
 	public void onCreate() {
+		pref = PlayableMazePaperService.this.getSharedPreferences(SHARED_PREFS_NAME, 0);
+		pref.registerOnSharedPreferenceChangeListener(this);
+		onSharedPreferenceChanged(pref, null);
+		
 //		android.os.Debug.waitForDebugger();
 		super.onCreate();
 	}
@@ -309,5 +332,4 @@ public class PlayableMazePaperService extends BaseLiveWallpaperService implement
 		this.physicsWorld.setGravity(gravity);
 		Vector2Pool.recycle(gravity);
 	}
-
 }

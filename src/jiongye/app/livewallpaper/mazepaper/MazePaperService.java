@@ -1,15 +1,11 @@
 package jiongye.app.livewallpaper.mazepaper;
 
-import java.util.Random;
-import java.util.Stack;
-
 import android.content.SharedPreferences;
 import android.graphics.Canvas;
 import android.graphics.Paint;
 import android.graphics.Point;
 import android.os.Handler;
 import android.service.wallpaper.WallpaperService;
-import android.util.Log;
 import android.view.SurfaceHolder;
 
 public class MazePaperService extends WallpaperService {

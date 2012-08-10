@@ -48,5 +48,10 @@
                 android:resource="@xml/playablemazepaper" />
         </service>
         
+        <activity
+            android:name=".PlayableMazePaperSettings"
+            android:label="Playable MazePaper Settings"
+            android:exported="true">
+        </activity>
     </application>
 </manifest>

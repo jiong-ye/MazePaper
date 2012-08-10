@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen 
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:title="Playable MazePaper Settings"
+    android:key="playablemazepaper_settings">
+    <EditTextPreference
+        android:key="maze_rows"
+        android:summary="How many rows?(Number only!)"
+        android:title="Rows" />
+    <EditTextPreference
+        android:key="maze_cols"
+        android:summary="How many columns? (Number only!)"
+        android:title="Columns" />
+</PreferenceScreen>
