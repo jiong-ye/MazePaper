@@ -38,8 +38,8 @@ public class PlayableMazePaperService extends BaseLiveWallpaperService implement
 	public static final String SHARED_PREFS_NAME = "playable_mazepaper_settings";
 	private SharedPreferences pref;
 	
-	private int rows = 15;
-	private int columns = 13;
+	private int rows = 10;
+	private int columns = 7;
 
 	private static int CAMERA_WIDTH = 480;
 	private static int CAMERA_HEIGHT = 720;
@@ -76,7 +76,7 @@ public class PlayableMazePaperService extends BaseLiveWallpaperService implement
 		//grab wallpaper preference
 		try{
 			this.rows = Integer.parseInt(pref.getString("maze_rows", "10"));
-			this.columns = Integer.parseInt(pref.getString("maze_cols", "10"));
+			this.columns = Integer.parseInt(pref.getString("maze_cols", "7"));
 			
 		}
 		catch(Exception exp){

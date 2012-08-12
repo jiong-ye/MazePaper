@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Maze WallPaper</string>
-    <string name="playable_app_name">Playable Maze Wallpaper</string>
+    <string name="playable_app_name">Maze Wallpaper - Playable</string>
     <string-array name="solve_speed_names">
         <item>Slow</item>
         <item>Medium</item>

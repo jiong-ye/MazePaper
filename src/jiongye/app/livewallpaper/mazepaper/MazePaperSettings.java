@@ -11,6 +11,7 @@ public class MazePaperSettings extends PreferenceActivity implements SharedPrefe
     @Override
     protected void onCreate(Bundle icicle) {
         super.onCreate(icicle);
+
         getPreferenceManager().setSharedPreferencesName(MazePaperService.SHARED_PREFS_NAME);
         addPreferencesFromResource(R.xml.mazepaper_setting);
         getPreferenceManager().getSharedPreferences().registerOnSharedPreferenceChangeListener(this);
