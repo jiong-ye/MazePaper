@@ -1,16 +1,13 @@
 package jiongye.app.livewallpaper.mazepaper;
 
 import java.util.Random;
-import java.util.Stack;
 
-import android.R.integer;
 import android.content.SharedPreferences;
 import android.graphics.Canvas;
 import android.graphics.Paint;
 import android.graphics.Point;
 import android.os.Handler;
 import android.service.wallpaper.WallpaperService;
-import android.util.Log;
 import android.view.SurfaceHolder;
 
 public class MazePaperService extends WallpaperService {
@@ -49,8 +46,7 @@ public class MazePaperService extends WallpaperService {
 		private int progressiveFullDrawCount;
 				
 		private boolean debug;
-		Stack<Point> track;
-		
+
 		private final Runnable mdrawMaze = new Runnable() {
 			public void run() {
 				drawFrame();
@@ -285,15 +281,7 @@ public class MazePaperService extends WallpaperService {
 				
 				if (!maze.solved) {
 					maze.cpuNextMove();
-					track = (Stack<Point>) maze.cpu.track.clone();
 				} else {
-					if(this.debug){
-						
-						while (track.size() > 0) {
-							Point p =track.pop();
-							Log.i("maze", "("+p.x+","+p.y+")");
-						}
-					}
 //					generateMaze();
 				}
 			}

@@ -1,12 +1,10 @@
 package jiongye.app.livewallpaper.mazepaper;
 
-import java.io.Console;
 import java.util.Random;
 import java.util.Stack;
 
 import android.graphics.Paint;
 import android.graphics.Point;
-import android.util.Log;
 
 public class Maze {
 	public int width;

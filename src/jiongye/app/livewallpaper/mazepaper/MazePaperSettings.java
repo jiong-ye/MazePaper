@@ -8,7 +8,8 @@ import android.preference.PreferenceActivity;
 
 public class MazePaperSettings extends PreferenceActivity implements SharedPreferences.OnSharedPreferenceChangeListener {
 
-    @Override
+    @SuppressWarnings("deprecation")
+	@Override
     protected void onCreate(Bundle icicle) {
         super.onCreate(icicle);
 
@@ -22,7 +23,8 @@ public class MazePaperSettings extends PreferenceActivity implements SharedPrefe
         super.onResume();
     }
 
-    @Override
+    @SuppressWarnings("deprecation")
+	@Override
     protected void onDestroy() {
         getPreferenceManager().getSharedPreferences().unregisterOnSharedPreferenceChangeListener(this);
         super.onDestroy();

@@ -8,7 +8,8 @@ import android.preference.PreferenceActivity;
 
 public class PlayableMazePaperSettings extends PreferenceActivity implements SharedPreferences.OnSharedPreferenceChangeListener {
 	
-    @Override
+    @SuppressWarnings("deprecation")
+	@Override
     protected void onCreate(Bundle icicle) {
         super.onCreate(icicle);
         getPreferenceManager().setSharedPreferencesName(PlayableMazePaperService.SHARED_PREFS_NAME);
@@ -21,7 +22,8 @@ public class PlayableMazePaperSettings extends PreferenceActivity implements Sha
         super.onResume();
     }
 
-    @Override
+    @SuppressWarnings("deprecation")
+	@Override
     protected void onDestroy() {
         getPreferenceManager().getSharedPreferences().unregisterOnSharedPreferenceChangeListener(this);
         super.onDestroy();
