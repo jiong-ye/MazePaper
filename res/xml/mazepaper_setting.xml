@@ -17,4 +17,9 @@
         android:title="Speed"
         android:entries="@array/solve_speed_names"
         android:entryValues="@array/solve_speed_values" />
+    <CheckBoxPreference
+        android:key="maze_draw_progressive"
+        android:summary="Determines how the map is drawn"
+        android:title="Draw Maze Progressively">
+    </CheckBoxPreference>
 </PreferenceScreen>

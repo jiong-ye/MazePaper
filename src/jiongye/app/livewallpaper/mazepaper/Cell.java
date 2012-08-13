@@ -14,6 +14,8 @@ public class Cell {
 	public boolean visited;
 	public boolean cpuVisited;
 	
+	public boolean fullDraw;
+	
 	//information about surrouding 4 walls
 	public HashMap<CellNeighbor, Boolean> walls;
 	public HashMap<CellNeighbor, Wall> wallBodies;
@@ -35,6 +37,8 @@ public class Cell {
 		this.walls.put(CellNeighbor.LEFT, true);
 		
 		this.wallBodies = new HashMap<CellNeighbor, Wall>();
+		
+		this.fullDraw = true;
 	}
 
 	public void setCoord(Point point) {
