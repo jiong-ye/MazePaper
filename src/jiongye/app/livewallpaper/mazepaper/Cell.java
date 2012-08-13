@@ -23,6 +23,8 @@ public class Cell {
 	//entry and exit markers
 	public boolean isStart = false;
 	public boolean isEnd = false;
+	
+	public int possibleNeighbor;
 		
 	public Cell(int _row, int _col){
 		this.pos = new Point(_row,_col);
@@ -39,6 +41,8 @@ public class Cell {
 		this.wallBodies = new HashMap<CellNeighbor, Wall>();
 		
 		this.fullDraw = true;
+		
+		this.possibleNeighbor = 0;
 	}
 
 	public void setCoord(Point point) {

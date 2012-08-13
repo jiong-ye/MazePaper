@@ -1,10 +1,12 @@
 package jiongye.app.livewallpaper.mazepaper;
 
+import java.io.Console;
 import java.util.Random;
 import java.util.Stack;
 
 import android.graphics.Paint;
 import android.graphics.Point;
+import android.util.Log;
 
 public class Maze {
 	public int width;
@@ -103,20 +105,24 @@ public class Maze {
 			Stack<Point> neighbors = new Stack<Point>();
 
 			// top neighbor
-			if (curCell.pos.x > 0 && !this.getNeighbor(curCell.pos, CellNeighbor.TOP).visited)
+			if (curCell.pos.x > 0 && !this.getNeighbor(curCell.pos, CellNeighbor.TOP).visited){
 				neighbors.push(new Point(curCell.pos.x - 1, curCell.pos.y));
-
+			}
+			
 			// right neighbor
-			if (curCell.pos.y < this.columns - 1 && !this.getNeighbor(curCell.pos, CellNeighbor.RIGHT).visited)
+			if (curCell.pos.y < this.columns - 1 && !this.getNeighbor(curCell.pos, CellNeighbor.RIGHT).visited){
 				neighbors.push(new Point(curCell.pos.x, curCell.pos.y + 1));
+			}
 
 			// bottom neighbor
-			if (curCell.pos.x < this.rows - 1 && !this.getNeighbor(curCell.pos, CellNeighbor.BOTTOM).visited)
+			if (curCell.pos.x < this.rows - 1 && !this.getNeighbor(curCell.pos, CellNeighbor.BOTTOM).visited){
 				neighbors.push(new Point(curCell.pos.x + 1, curCell.pos.y));
+			}
 
 			// left neighbor
-			if (curCell.pos.y > 0 && !this.getNeighbor(curCell.pos, CellNeighbor.LEFT).visited)
+			if (curCell.pos.y > 0 && !this.getNeighbor(curCell.pos, CellNeighbor.LEFT).visited){
 				neighbors.push(new Point(curCell.pos.x, curCell.pos.y - 1));
+			}
 
 			// there are unvisited neighbors
 			if (neighbors.size() > 0) {
@@ -131,8 +137,7 @@ public class Maze {
 					Cell newCell = this.getCell(neighborPos);
 
 					if (newCell != null) {
-						// check neighbor's position relative to current
-						// cell
+						// check neighbor's position relative to current cell
 						// top cell
 						if (newCell.pos.x < curCell.pos.x) {
 							newCell.walls.put(CellNeighbor.BOTTOM, false);
@@ -213,36 +218,49 @@ public class Maze {
 			// get all neighbors that havent been visited before
 			Stack<Point> neighbors = new Stack<Point>();
 			Cell curCell = this.getCell(this.cpu.pos);
-
-			if (!curCell.walls.get(CellNeighbor.TOP) && !this.getNeighbor(this.cpu.pos, CellNeighbor.TOP).cpuVisited){
-				neighbors.push(new Point(this.cpu.pos.x - 1, this.cpu.pos.y));
-			}
-
-			if (!curCell.walls.get(CellNeighbor.RIGHT) && !this.getNeighbor(this.cpu.pos, CellNeighbor.RIGHT).cpuVisited){
-				neighbors.push(new Point(this.cpu.pos.x, this.cpu.pos.y + 1));
-			}
-
-			if (!curCell.walls.get(CellNeighbor.BOTTOM) && !this.getNeighbor(this.cpu.pos, CellNeighbor.BOTTOM).cpuVisited){
-				neighbors.push(new Point(this.cpu.pos.x + 1, this.cpu.pos.y));
+			Cell neighbCell = null;
+			Point neightPoint = null;
+			
+			for (CellNeighbor neighbor : CellNeighbor.values()) {
+				if(!curCell.walls.get(neighbor) && !this.getNeighbor(this.cpu.pos, neighbor).cpuVisited){
+					neighbCell = this.getNeighbor(curCell.pos, neighbor);
+					if(neighbCell != null){
+						neightPoint = new Point(neighbCell.pos);
+						
+						if(!this.cpu.track.contains(neightPoint))
+							neighbors.push(neightPoint);
+					}
+				}
 			}
 			
-			if (!curCell.walls.get(CellNeighbor.LEFT) && !this.getNeighbor(this.cpu.pos, CellNeighbor.LEFT).cpuVisited){
-				neighbors.push(new Point(this.cpu.pos.x, this.cpu.pos.y-1));
-			}
+			curCell.possibleNeighbor = neighbors.size();
+			Point trackPoint = null;
 			
+			//determine which neighbor to visit
 			switch (neighbors.size()) {
+				//0 choices, back track
 				case 0:
 					if (this.cpu.track.size() > 0)
 						this.cpu.pos = this.cpu.track.pop();
+					
+					//always start the track at the starting point
+					if(this.cpu.track.size() == 0){
+						trackPoint = new Point(this.startPoint.x, this.startPoint.y);
+					}
+					
 					break;
+				//1 choice, go to it
 				case 1:
 					int nextX = neighbors.get(0).x;
 					int nextY = neighbors.get(0).y;
 					
 					this.cpu.pos = new Point(nextX, nextY);
 					this.cells[nextX][nextY].cpuVisited = true;
-					this.cpu.track.push(new Point(nextX,nextY));
+					
+					trackPoint = new Point(nextX,nextY);
+					
 					break;
+				//more than 1 choice, pick randomly
 				default:
 					Random rand = new Random();
 					int randomNeighborIndex = rand.nextInt(neighbors.size());
@@ -251,10 +269,29 @@ public class Maze {
 					
 					this.cpu.pos = new Point(randX, randY);
 					this.cells[randX][randY].cpuVisited = true;
-					this.cpu.track.push(new Point(randX,randY));
+					
+					//push new point to track
+					trackPoint = new Point(randX,randY);
+															
+					this.cpu.track.push(trackPoint);
+					
 					break;
 			}
+			
+			//add corner point, so track corners are always 90 degree
+			if(trackPoint != null){
+				if(this.cpu.track.size() > 0){
+					Point lastPoint = this.cpu.track.peek();
+					
+					if(lastPoint != null){
+						if(lastPoint.x != trackPoint.x && lastPoint.y != trackPoint.y){
+							if(trackPoint.x < lastPoint.x && trackPoint.y < lastPoint.y)
+								this.cpu.track.push(new Point(trackPoint.x+1, trackPoint.y));
+						}
+					}
+				}
+				this.cpu.track.push(trackPoint);
+			}
 		}
-	}
-
+	}	
 }

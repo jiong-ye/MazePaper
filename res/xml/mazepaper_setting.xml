@@ -20,6 +20,7 @@
     <CheckBoxPreference
         android:key="maze_draw_progressive"
         android:summary="Determines how the map is drawn"
-        android:title="Draw Maze Progressively">
+        android:title="Draw Maze Progressively"
+        android:defaultValue="true">
     </CheckBoxPreference>
 </PreferenceScreen>

@@ -1,6 +1,7 @@
 package jiongye.app.livewallpaper.mazepaper;
 
 import java.util.Random;
+import java.util.Stack;
 
 import android.R.integer;
 import android.content.SharedPreferences;
@@ -9,6 +10,7 @@ import android.graphics.Paint;
 import android.graphics.Point;
 import android.os.Handler;
 import android.service.wallpaper.WallpaperService;
+import android.util.Log;
 import android.view.SurfaceHolder;
 
 public class MazePaperService extends WallpaperService {
@@ -18,7 +20,7 @@ public class MazePaperService extends WallpaperService {
 	@Override
 	public void onCreate() {
 		super.onCreate();
-		// android.os.Debug.waitForDebugger();
+//		android.os.Debug.waitForDebugger();
 	}
 
 	@Override
@@ -46,6 +48,9 @@ public class MazePaperService extends WallpaperService {
 		private int progressiveDrawStep;
 		private int progressiveFullDrawCount;
 				
+		private boolean debug;
+		Stack<Point> track;
+		
 		private final Runnable mdrawMaze = new Runnable() {
 			public void run() {
 				drawFrame();
@@ -76,9 +81,10 @@ public class MazePaperService extends WallpaperService {
 			}
 			
 			this.progressiveDrawDone = false;
-			this.progressiveDrawStep = 5;
+			this.progressiveDrawStep = 20;
 			this.progressiveFullDrawCount = 0;
-			
+			this.debug = true;
+						
 			generateMaze();
 		}
 
@@ -156,6 +162,22 @@ public class MazePaperService extends WallpaperService {
 			maze = new Maze(mazeRows, mazeCols);
 			maze.createMaze();
 
+			if(this.debug){
+				Cell cell = null;
+				//draw all cells with all walls first
+				for (int i = 0; i < mazeRows; i++) {
+					for (int j = 0; j < mazeCols; j++) {
+						cell = maze.getCell(i,j);
+						if(cell!=null){
+							cell.possibleNeighbor += !cell.walls.get(CellNeighbor.TOP) ? 1:0;
+							cell.possibleNeighbor += !cell.walls.get(CellNeighbor.RIGHT) ? 1:0;
+							cell.possibleNeighbor += !cell.walls.get(CellNeighbor.BOTTOM) ? 1:0;
+							cell.possibleNeighbor += !cell.walls.get(CellNeighbor.LEFT) ? 1:0;
+						}
+					}
+				}
+			}
+			
 			maze.cpu = new CPU();
 			
 			progressiveDrawDone = false;
@@ -172,6 +194,11 @@ public class MazePaperService extends WallpaperService {
 				drawMazeNormal(c);
 			} else {
 				drawMazeProgress(c);
+			}
+			
+			if(this.debug){
+				c.drawText("Track size: " + maze.cpu.track.size(), 20f, 50f, maze.cellPaint);
+				
 			}
 						
 			c.restore();
@@ -194,7 +221,7 @@ public class MazePaperService extends WallpaperService {
 
 			//draw all cells with all walls first
 			for (int i = 0; i < mazeRows; i++) {
-				for (int j = 0; j < mazeCols; j++) {					
+				for (int j = 0; j < mazeCols; j++) {		
 					cell = maze.getCell(i,j);
 					
 					if(cell!=null)
@@ -204,7 +231,7 @@ public class MazePaperService extends WallpaperService {
 			
 			//change some cell to not get fully draw
 			if(!progressiveDrawDone){
-				if(progressiveFullDrawCount < mazeRows * mazeCols - 10){
+				if(progressiveFullDrawCount < mazeRows * mazeCols - progressiveDrawStep){
 					for(int i=0;i<progressiveDrawStep;){
 						cell = maze.getCell(random.nextInt(mazeRows), random.nextInt(mazeCols));
 						
@@ -217,7 +244,6 @@ public class MazePaperService extends WallpaperService {
 						}
 					}
 				} else {
-					//draw all cells with all walls first
 					for (int i = 0; i < mazeRows; i++) {
 						for (int j = 0; j < mazeCols; j++) { 					
 							maze.cells[i][j].fullDraw = false;
@@ -259,8 +285,16 @@ public class MazePaperService extends WallpaperService {
 				
 				if (!maze.solved) {
 					maze.cpuNextMove();
+					track = (Stack<Point>) maze.cpu.track.clone();
 				} else {
-					generateMaze();
+					if(this.debug){
+						
+						while (track.size() > 0) {
+							Point p =track.pop();
+							Log.i("maze", "("+p.x+","+p.y+")");
+						}
+					}
+//					generateMaze();
 				}
 			}
 		}
@@ -306,8 +340,7 @@ public class MazePaperService extends WallpaperService {
 					c.drawRect(topLeft.x + maze.cellStrokeWidth, topLeft.y + maze.cellStrokeWidth, bottomRight.x - maze.cellStrokeWidth,
 							bottomRight.y - maze.cellStrokeWidth, maze.endCellPaint);
 				}
-				// a cell visited by the play but not on his track to
-				// destination
+				// a cell visited by the play but not on his track to destination
 				else if (cell.cpuVisited && !maze.cpu.track.contains(cell.pos)) {
 					c.drawRect(topLeft.x + maze.cellStrokeWidth + 3, topLeft.y + maze.cellStrokeWidth + 3, bottomRight.x
 							- maze.cellStrokeWidth - 3, bottomRight.y - maze.cellStrokeWidth - 3, maze.cpuVisitedCellPaint);
@@ -316,6 +349,16 @@ public class MazePaperService extends WallpaperService {
 					cell.cpuVisited = true;
 					maze.cpu.pos = new Point(cell.pos.x, cell.pos.y);
 					maze.cpu.track.push(new Point(cell.pos.x, cell.pos.y));
+				} 
+				
+				if(this.debug) {
+					c.drawText(cell.possibleNeighbor + "", topLeft.x + 6f, topLeft.y + 12f, maze.cellPaint);
+					
+					if(cell.pos.x == 0)
+						c.drawText(cell.pos.y+"", topLeft.x+6f, topLeft.y-12f, maze.cellPaint);
+					
+					if(cell.pos.y == 0)
+						c.drawText(cell.pos.x+"", topLeft.x-17f, topLeft.y+12f, maze.cellPaint);
 				}
 			}
 		}
