@@ -96,6 +96,10 @@ public class MazePaperService extends WallpaperService {
 			this.debugPaint.setColor(0x88ffffcc);
 			this.debugPaint.setTextSize(15f);
 			
+			this.mazeSolved = 0;
+			this.mazeTotalMoves = 0;
+			this.mazeAverageMoves = 0;
+			
 			generateMaze();
 		}
 
