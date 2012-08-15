@@ -368,7 +368,7 @@ public class MazePaperService extends WallpaperService {
 			int cWidth = c.getWidth();
 			int cHeight = c.getHeight();
 			
-			return cWidth < cHeight ? cWidth / mazeRows : cHeight / mazeRows;
+			return cWidth < cHeight ? cWidth / mazeRows : cHeight / mazeCols;
 		}
 		
 		int getHorizontalOffet(Canvas c, int cellSize){
