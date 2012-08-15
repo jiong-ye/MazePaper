@@ -6,11 +6,11 @@
     <EditTextPreference
         android:key="maze_rows"
         android:summary="How many rows?(Number only!)"
-        android:title="Rows" />
+        android:title="Rows"/>
     <EditTextPreference
         android:key="maze_cols"
         android:summary="How many columns? (Number only!)"
-        android:title="Columns" />
+        android:title="Columns"/>
     <ListPreference
         android:key="maze_solve_speed"
         android:summary="How fast it solves the maze? (the faster it is, the more juice it uses.)"
@@ -22,5 +22,11 @@
         android:summary="Determines how the map is drawn"
         android:title="Draw Maze Progressively"
         android:defaultValue="true">
+    </CheckBoxPreference>
+    <CheckBoxPreference
+        android:key="maze_info"
+        android:summary="Display Maze Information"
+        android:title="Display Information"
+        android:defaultValue="false">
     </CheckBoxPreference>
 </PreferenceScreen>

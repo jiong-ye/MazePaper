@@ -24,6 +24,8 @@ public class Maze {
 		
 	public int cellStrokeWidth;
 
+	public int stuckCount;
+	
 	public boolean regenerated;
 	public boolean solved;
 
@@ -52,7 +54,10 @@ public class Maze {
 
 		this.endPoint = _end;
 		this.startPoint = _start;
+		
 		this.cells[_end.x][_end.y].isEnd = true;
+		this.cells[_end.x][_end.y].possibleNeighbor = 4;
+		
 		this.cells[_start.x][_start.y].isStart = true;
 
 		this.cellStrokeWidth = 2;
@@ -71,6 +76,8 @@ public class Maze {
 		this.cpuVisitedCellPaint = new Paint();
 		this.cpuVisitedCellPaint.setColor(0x66c3c3c3);
 		this.cpuVisitedCellPaint.setStyle(Paint.Style.FILL);
+		
+		this.stuckCount = 0;
 	}
 	
 	public void regenerate(){
@@ -171,6 +178,39 @@ public class Maze {
 				}
 			}
 		}
+		
+		Cell cell = null;
+		for (int i = 0; i < this.rows; i++) {
+			for (int j = 0; j < this.columns; j++) {
+				cell = this.getCell(i,j);
+				if(cell!=null && !cell.isEnd){
+					cell.possibleNeighbor += !cell.walls.get(CellNeighbor.TOP) ? 1:0;
+					cell.possibleNeighbor += !cell.walls.get(CellNeighbor.RIGHT) ? 1:0;
+					cell.possibleNeighbor += !cell.walls.get(CellNeighbor.BOTTOM) ? 1:0;
+					cell.possibleNeighbor += !cell.walls.get(CellNeighbor.LEFT) ? 1:0;
+				}
+			}
+		}
+	}
+	
+	public void reset() {
+		this.solved = false;
+		this.cpu.track.clear();
+		this.cpu.pos = new Point(this.startPoint.x, this.startPoint.y);
+		
+		Cell cell = null;
+		for (int i = 0; i < this.rows; i++) {
+			for (int j = 0; j < this.columns; j++) {
+				cell = this.getCell(i,j);
+				if(cell!=null && !cell.isEnd){
+					cell.possibleNeighbor += !cell.walls.get(CellNeighbor.TOP) ? 1:0;
+					cell.possibleNeighbor += !cell.walls.get(CellNeighbor.RIGHT) ? 1:0;
+					cell.possibleNeighbor += !cell.walls.get(CellNeighbor.BOTTOM) ? 1:0;
+					cell.possibleNeighbor += !cell.walls.get(CellNeighbor.LEFT) ? 1:0;
+					cell.cpuVisited = false;
+				}
+			}
+		}
 	}
 
 	public Cell getCell(int row, int column) {
@@ -216,17 +256,18 @@ public class Maze {
 			// get all neighbors that havent been visited before
 			Stack<Point> neighbors = new Stack<Point>();
 			Cell curCell = this.getCell(this.cpu.pos);
-			Cell neighbCell = null;
+			Cell neighborCell = null;
 			Point neightPoint = null;
 			
 			for (CellNeighbor neighbor : CellNeighbor.values()) {
-				if(!curCell.walls.get(neighbor) && !this.getNeighbor(this.cpu.pos, neighbor).cpuVisited){
-					neighbCell = this.getNeighbor(curCell.pos, neighbor);
-					if(neighbCell != null){
-						neightPoint = new Point(neighbCell.pos);
-						
-						if(!this.cpu.track.contains(neightPoint))
+				//if there is no wall
+				if(!curCell.walls.get(neighbor)){
+					neighborCell = this.getNeighbor(curCell.pos, neighbor);
+					if(neighborCell != null){
+						if(neighborCell.possibleNeighbor > 0 && !this.cpu.track.contains(neighborCell.pos)){
+							neightPoint = new Point(neighborCell.pos);
 							neighbors.push(neightPoint);
+						}
 					}
 				}
 			}
@@ -246,6 +287,8 @@ public class Maze {
 						trackPoint = new Point(this.startPoint.x, this.startPoint.y);
 					}
 					
+					curCell.possibleNeighbor = 0;
+					
 					break;
 				//1 choice, go to it
 				case 1:
@@ -254,8 +297,11 @@ public class Maze {
 					
 					this.cpu.pos = new Point(nextX, nextY);
 					this.cells[nextX][nextY].cpuVisited = true;
+					this.cells[nextX][nextY].possibleNeighbor--;
 					
 					trackPoint = new Point(nextX,nextY);
+					
+					curCell.possibleNeighbor = 0;
 					
 					break;
 				//more than 1 choice, pick randomly
@@ -267,29 +313,81 @@ public class Maze {
 					
 					this.cpu.pos = new Point(randX, randY);
 					this.cells[randX][randY].cpuVisited = true;
+					this.cells[randX][randY].possibleNeighbor--;
 					
 					//push new point to track
 					trackPoint = new Point(randX,randY);
 															
 					this.cpu.track.push(trackPoint);
 					
+					//change possible neighbor count
+					if(curCell.possibleNeighbor > 2) {
+						curCell.possibleNeighbor--;
+					} else {
+						// if we are on a straight hallwall (top and bottom walls open or left and right walls open),
+						// possible neighbor count is really the same as 1 choice
+						// because you can only go back by back track
+						if((curCell.walls.get(CellNeighbor.TOP) && curCell.walls.get(CellNeighbor.BOTTOM)) || (curCell.walls.get(CellNeighbor.LEFT) && curCell.walls.get(CellNeighbor.RIGHT))) {
+							curCell.possibleNeighbor = 0;
+						} else {
+							curCell.possibleNeighbor--;
+						}
+					}
+					
 					break;
 			}
 			
-			//add corner point, so track corners are always 90 degree
 			if(trackPoint != null){
+				//cornering fix
 				if(this.cpu.track.size() > 0){
 					Point lastPoint = this.cpu.track.peek();
-					
-					if(lastPoint != null){
-						if(lastPoint.x != trackPoint.x && lastPoint.y != trackPoint.y){
-							if(trackPoint.x < lastPoint.x && trackPoint.y < lastPoint.y)
-								this.cpu.track.push(new Point(trackPoint.x+1, trackPoint.y));
+					if(lastPoint.x != trackPoint.x && lastPoint.y != trackPoint.y){
+						Point pointA = new Point(lastPoint.x,trackPoint.y);
+						Point pointB = new Point(trackPoint.x, lastPoint.y);
+						Point cornerPoint = null;
+												
+						if(!this.wallBetween(pointA, lastPoint) && !this.wallBetween(pointA, trackPoint)) {
+							cornerPoint = pointA;
+						} else if(!this.wallBetween(pointB, lastPoint) && !this.wallBetween(pointB, trackPoint)) {
+							cornerPoint = pointB;
 						}
+						
+						if(cornerPoint != null) 
+							this.cpu.track.push(cornerPoint);
 					}
 				}
 				this.cpu.track.push(trackPoint);
+				this.stuckCount = 0;
 			}
+			else{
+				this.stuckCount++;
+			}
+			
 		}
-	}	
+	}
+	
+	public boolean wallBetween(Point pointA, Point pointB){
+		Cell cellA = this.getCell(pointA);
+		Cell cellB = this.getCell(pointB);
+		
+		if(cellA != null && cellB != null) {
+			//A is above B
+			if(cellA.pos.x < cellB.pos.x)
+				return cellA.walls.get(CellNeighbor.BOTTOM) || cellB.walls.get(CellNeighbor.TOP);
+			
+			//A is below B
+			if(cellA.pos.x > cellB.pos.x)
+				return cellA.walls.get(CellNeighbor.TOP) || cellB.walls.get(CellNeighbor.BOTTOM);
+			
+			//A is to the left of B
+			if(cellA.pos.y < cellB.pos.y)
+				return cellA.walls.get(CellNeighbor.RIGHT) || cellB.walls.get(CellNeighbor.LEFT);
+			
+			//A is to the right of B
+			if(cellA.pos.y > cellB.pos.y)
+				return cellA.walls.get(CellNeighbor.LEFT) || cellB.walls.get(CellNeighbor.RIGHT);
+		}
+		
+		return true;
+	}
 }

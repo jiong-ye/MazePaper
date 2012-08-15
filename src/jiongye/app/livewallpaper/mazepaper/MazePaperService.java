@@ -44,9 +44,17 @@ public class MazePaperService extends WallpaperService {
 		private boolean progressiveDrawDone;
 		private int progressiveDrawStep;
 		private int progressiveFullDrawCount;
-				
+		
+		private boolean info;
+		
 		private boolean debug;
-
+		private Paint debugPaint;
+		
+		private int mazeSolved = 0;
+		private int mazeMoves = 0;
+		private int mazeTotalMoves = 0;
+		private int mazeAverageMoves = 0;
+		
 		private final Runnable mdrawMaze = new Runnable() {
 			public void run() {
 				drawFrame();
@@ -67,23 +75,40 @@ public class MazePaperService extends WallpaperService {
 				this.mazeCols = Integer.parseInt(pref.getString("maze_cols", "8"));
 				this.solveSpeed = pref.getString("maze_solve_speed", "slow");
 				this.progressiveDraw = pref.getBoolean("maze_draw_progressive", true);
-
+				this.info = pref.getBoolean("maze_info", false);
 			} catch (Exception exp) {
 				this.mazeRows = 10;
 				this.mazeCols = 10;
 				this.solveSpeed = "slow";
 				this.progressiveDraw = true;
 				this.progressiveDrawDone = false;
+				this.info = false;
 			}
-			
+									
 			this.progressiveDrawDone = false;
-			this.progressiveDrawStep = 20;
+			this.progressiveDrawStep = (int) (this.mazeRows * this.mazeCols * 0.05);
+			this.progressiveDrawStep  = this.progressiveDrawStep < 1 ? 1 : this.progressiveDrawStep;
 			this.progressiveFullDrawCount = 0;
-			this.debug = true;
 						
+			this.debug = false;
+			
+			this.debugPaint = new Paint();
+			this.debugPaint.setColor(0x88ffffcc);
+			this.debugPaint.setTextSize(15f);
+			
 			generateMaze();
 		}
 
+		void generateMaze() {
+			maze = new Maze(mazeRows, mazeCols);
+			maze.createMaze();
+									
+			maze.cpu = new CPU();
+			
+			progressiveDrawDone = false;
+			progressiveFullDrawCount = 0;
+		}
+		
 		@Override
 		public void onCreate(SurfaceHolder surfaceHolder) {
 			super.onCreate(surfaceHolder);
@@ -153,33 +178,7 @@ public class MazePaperService extends WallpaperService {
 			mVisible = false;
 			mHandler.removeCallbacks(mdrawMaze);
 		}
-
-		void generateMaze() {
-			maze = new Maze(mazeRows, mazeCols);
-			maze.createMaze();
-
-			if(this.debug){
-				Cell cell = null;
-				//draw all cells with all walls first
-				for (int i = 0; i < mazeRows; i++) {
-					for (int j = 0; j < mazeCols; j++) {
-						cell = maze.getCell(i,j);
-						if(cell!=null){
-							cell.possibleNeighbor += !cell.walls.get(CellNeighbor.TOP) ? 1:0;
-							cell.possibleNeighbor += !cell.walls.get(CellNeighbor.RIGHT) ? 1:0;
-							cell.possibleNeighbor += !cell.walls.get(CellNeighbor.BOTTOM) ? 1:0;
-							cell.possibleNeighbor += !cell.walls.get(CellNeighbor.LEFT) ? 1:0;
-						}
-					}
-				}
-			}
-			
-			maze.cpu = new CPU();
-			
-			progressiveDrawDone = false;
-			progressiveFullDrawCount = 0;
-		}
-
+		
 		void drawMaze(Canvas c) {
 			maze.cpu.setRadius(getCellSize(c));
 
@@ -192,9 +191,14 @@ public class MazePaperService extends WallpaperService {
 				drawMazeProgress(c);
 			}
 			
+			if(this.info) {
+				c.drawText("Solved: " + mazeSolved, 20f, 60f, this.debugPaint);
+				c.drawText("Moves: " + mazeMoves, 20f, 75f, this.debugPaint);
+				c.drawText("Average Moves: " + mazeAverageMoves, 20f, 90f, this.debugPaint);
+			}
+			
 			if(this.debug){
-				c.drawText("Track size: " + maze.cpu.track.size(), 20f, 50f, maze.cellPaint);
-				
+				c.drawText("Track size: " + maze.cpu.track.size(), 20f, 105f, this.debugPaint);
 			}
 						
 			c.restore();
@@ -281,8 +285,13 @@ public class MazePaperService extends WallpaperService {
 				
 				if (!maze.solved) {
 					maze.cpuNextMove();
+					mazeMoves++;
 				} else {
-//					generateMaze();
+					mazeSolved++;
+					mazeTotalMoves += mazeMoves;
+					mazeMoves = 0;
+					mazeAverageMoves = mazeSolved > 0 ? mazeTotalMoves / mazeSolved : 0;
+					generateMaze();
 				}
 			}
 		}
@@ -340,13 +349,13 @@ public class MazePaperService extends WallpaperService {
 				} 
 				
 				if(this.debug) {
-					c.drawText(cell.possibleNeighbor + "", topLeft.x + 6f, topLeft.y + 12f, maze.cellPaint);
+					c.drawText(cell.possibleNeighbor + "", topLeft.x + 6f, topLeft.y + 12f, this.debugPaint);
 					
 					if(cell.pos.x == 0)
-						c.drawText(cell.pos.y+"", topLeft.x+6f, topLeft.y-12f, maze.cellPaint);
+						c.drawText(cell.pos.y+"", topLeft.x+6f, topLeft.y-12f, this.debugPaint);
 					
 					if(cell.pos.y == 0)
-						c.drawText(cell.pos.x+"", topLeft.x-17f, topLeft.y+12f, maze.cellPaint);
+						c.drawText(cell.pos.x+"", topLeft.x-17f, topLeft.y+12f, this.debugPaint);
 				}
 			}
 		}
