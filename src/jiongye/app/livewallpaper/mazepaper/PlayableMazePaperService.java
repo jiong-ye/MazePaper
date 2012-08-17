@@ -51,7 +51,6 @@ public class PlayableMazePaperService extends BaseLiveWallpaperService implement
 	
 	Rectangle endRectangle;
 
-	BitmapTextureAtlasSource bitmapTextureAtlasSource;
 	BitmapTextureAtlas bitmapTextureAtlas;
 	TextureRegion bitmapTextureRegion;
 
