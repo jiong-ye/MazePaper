@@ -1,5 +1,6 @@
 package jiongye.app.livewallpaper.mazepaper;
 
+import java.util.Random;
 import java.util.Stack;
 
 import android.graphics.Paint;
@@ -22,11 +23,16 @@ public class CPU {
 		this.track = new Stack<Point>();
 		this.offset = new Point();
 		
+		Random rand = new Random();
+		int r = rand.nextInt(255);
+		int g = rand.nextInt(255);
+		int b = rand.nextInt(255);
+		
 		this.paint = new Paint();
-		this.paint.setColor(0xffff0000);
+		this.paint.setARGB(255, r, g, b);
 		
 		this.pathPaint = new Paint();
-		this.pathPaint.setColor(0xfffff000);
+		this.pathPaint.setARGB(128, r, g, b);
 		this.pathPaint.setStrokeCap(Cap.ROUND);
 		this.pathPaint.setAntiAlias(true);
 	}

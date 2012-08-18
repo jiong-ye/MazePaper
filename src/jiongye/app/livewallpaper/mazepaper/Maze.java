@@ -14,7 +14,8 @@ public class Maze {
 
 	public Cell[][] cells;
 	public CPU cpu;
-
+	public Stack<CPU> cpuStack;
+	
 	public Point startPoint;
 	public Point endPoint;
 	
@@ -247,15 +248,15 @@ public class Maze {
 		return null;
 	}
 
-	public void cpuNextMove() {
-		if (this.getCell(this.cpu.pos).isEnd) {
+	public void cpuNextMove(CPU cpu) {
+		if (this.getCell(cpu.pos).isEnd) {
 			this.solved = true;
 		}
 
 		if (!this.solved) {
 			// get all neighbors that havent been visited before
 			Stack<Point> neighbors = new Stack<Point>();
-			Cell curCell = this.getCell(this.cpu.pos);
+			Cell curCell = this.getCell(cpu.pos);
 			Cell neighborCell = null;
 			Point neightPoint = null;
 			
@@ -264,7 +265,7 @@ public class Maze {
 				if(!curCell.walls.get(neighbor)){
 					neighborCell = this.getNeighbor(curCell.pos, neighbor);
 					if(neighborCell != null){
-						if(neighborCell.possibleNeighbor > 0 && !this.cpu.track.contains(neighborCell.pos)){
+						if(neighborCell.possibleNeighbor > 0 && !cpu.track.contains(neighborCell.pos)){
 							neightPoint = new Point(neighborCell.pos);
 							neighbors.push(neightPoint);
 						}
@@ -279,11 +280,11 @@ public class Maze {
 			switch (neighbors.size()) {
 				//0 choices, back track
 				case 0:
-					if (this.cpu.track.size() > 0)
-						this.cpu.pos = this.cpu.track.pop();
+					if (cpu.track.size() > 0)
+						cpu.pos = cpu.track.pop();
 					
 					//always start the track at the starting point
-					if(this.cpu.track.size() == 0){
+					if(cpu.track.size() == 0){
 						trackPoint = new Point(this.startPoint.x, this.startPoint.y);
 					}
 					
@@ -295,7 +296,7 @@ public class Maze {
 					int nextX = neighbors.get(0).x;
 					int nextY = neighbors.get(0).y;
 					
-					this.cpu.pos = new Point(nextX, nextY);
+					cpu.pos = new Point(nextX, nextY);
 					this.cells[nextX][nextY].cpuVisited = true;
 					this.cells[nextX][nextY].possibleNeighbor--;
 					
@@ -311,14 +312,14 @@ public class Maze {
 					int randX = neighbors.get(randomNeighborIndex).x;
 					int randY = neighbors.get(randomNeighborIndex).y;
 					
-					this.cpu.pos = new Point(randX, randY);
+					cpu.pos = new Point(randX, randY);
 					this.cells[randX][randY].cpuVisited = true;
 					this.cells[randX][randY].possibleNeighbor--;
 					
 					//push new point to track
 					trackPoint = new Point(randX,randY);
 															
-					this.cpu.track.push(trackPoint);
+					cpu.track.push(trackPoint);
 					
 					//change possible neighbor count
 					if(curCell.possibleNeighbor > 2) {
@@ -339,8 +340,8 @@ public class Maze {
 			
 			if(trackPoint != null){
 				//cornering fix
-				if(this.cpu.track.size() > 0){
-					Point lastPoint = this.cpu.track.peek();
+				if(cpu.track.size() > 0){
+					Point lastPoint = cpu.track.peek();
 					if(lastPoint.x != trackPoint.x && lastPoint.y != trackPoint.y){
 						Point pointA = new Point(lastPoint.x,trackPoint.y);
 						Point pointB = new Point(trackPoint.x, lastPoint.y);
@@ -353,10 +354,10 @@ public class Maze {
 						}
 						
 						if(cornerPoint != null) 
-							this.cpu.track.push(cornerPoint);
+							cpu.track.push(cornerPoint);
 					}
 				}
-				this.cpu.track.push(trackPoint);
+				cpu.track.push(trackPoint);
 				this.stuckCount = 0;
 			}
 			else{
@@ -365,7 +366,7 @@ public class Maze {
 			
 		}
 	}
-	
+		
 	public boolean wallBetween(Point pointA, Point pointB){
 		Cell cellA = this.getCell(pointA);
 		Cell cellB = this.getCell(pointB);

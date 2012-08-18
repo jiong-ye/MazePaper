@@ -1,6 +1,7 @@
 package jiongye.app.livewallpaper.mazepaper;
 
 import java.util.Random;
+import java.util.Stack;
 
 import android.content.SharedPreferences;
 import android.graphics.Canvas;
@@ -45,15 +46,17 @@ public class MazePaperService extends WallpaperService {
 		private int progressiveDrawStep;
 		private int progressiveFullDrawCount;
 		
+		private boolean multiCPU;
+		
 		private boolean info;
 		
 		private boolean debug;
 		private Paint debugPaint;
 		
-		private int mazeSolved = 0;
+		private long mazeSolved = 0;
 		private int mazeMoves = 0;
-		private int mazeTotalMoves = 0;
-		private int mazeAverageMoves = 0;
+		private long mazeTotalMoves = 0;
+		private long mazeAverageMoves = 0;
 		
 		private final Runnable mdrawMaze = new Runnable() {
 			public void run() {
@@ -76,12 +79,14 @@ public class MazePaperService extends WallpaperService {
 				this.solveSpeed = pref.getString("maze_solve_speed", "slow");
 				this.progressiveDraw = pref.getBoolean("maze_draw_progressive", true);
 				this.info = pref.getBoolean("maze_info", false);
+				this.multiCPU = pref.getBoolean("maze_multi_cpu", false);
 			} catch (Exception exp) {
 				this.mazeRows = 10;
 				this.mazeCols = 10;
 				this.solveSpeed = "slow";
 				this.progressiveDraw = true;
 				this.progressiveDrawDone = false;
+				this.multiCPU = true;
 				this.info = false;
 			}
 									
@@ -89,7 +94,7 @@ public class MazePaperService extends WallpaperService {
 			this.progressiveDrawStep = (int) (this.mazeRows * this.mazeCols * 0.05);
 			this.progressiveDrawStep  = this.progressiveDrawStep < 1 ? 1 : this.progressiveDrawStep;
 			this.progressiveFullDrawCount = 0;
-						
+			
 			this.debug = false;
 			
 			this.debugPaint = new Paint();
@@ -106,8 +111,13 @@ public class MazePaperService extends WallpaperService {
 		void generateMaze() {
 			maze = new Maze(mazeRows, mazeCols);
 			maze.createMaze();
-									
-			maze.cpu = new CPU();
+			
+			if(this.multiCPU) {
+				maze.cpuStack = new Stack<CPU>();
+				maze.cpuStack.push(new CPU());
+			} else {
+				maze.cpu = new CPU();
+			}
 			
 			progressiveDrawDone = false;
 			progressiveFullDrawCount = 0;
@@ -216,7 +226,10 @@ public class MazePaperService extends WallpaperService {
 				}
 			}
 			
-			drawCpuMove(c);
+			if(this.multiCPU)
+				drawMultiCpuMove(c);
+			else 
+				drawCpuMove(c);
 		}
 		
 		void drawMazeProgress(Canvas c){
@@ -257,7 +270,10 @@ public class MazePaperService extends WallpaperService {
 					progressiveDrawDone = true;
 				}
 			} else {
-				drawCpuMove(c);
+				if(this.multiCPU)
+					drawMultiCpuMove(c);
+				else 
+					drawCpuMove(c);
 			}
 		}
 		
@@ -272,23 +288,25 @@ public class MazePaperService extends WallpaperService {
 				maze.cpu.pos = new Point(cpuCell.pos.x, cpuCell.pos.y);
 
 				// draw cpu
-				c.drawCircle(cpuCell.pos.y * cellSize + horizontalOffset + maze.cpu.offset.x + 1, cpuCell.pos.x * cellSize + verticalOffset
-						+ maze.cpu.offset.y + 1, maze.cpu.radius, maze.cpu.paint);
+				c.drawCircle(cpuCell.pos.y * cellSize + horizontalOffset + maze.cpu.offset.x + 1, 
+							 cpuCell.pos.x * cellSize + verticalOffset + maze.cpu.offset.y + 1, 
+							 maze.cpu.radius, 
+							 maze.cpu.paint);
 
 				// draw cpus track;
 				if (maze.cpu.track.size() > 1) {
 					for (int i = 0; i < maze.cpu.track.size() - 1; i++) {
-						Point pathFrom = new Point(maze.cpu.track.get(i).y * cellSize + horizontalOffset + cellSize / 2, maze.cpu.track.get(i).x
-								* cellSize + verticalOffset + cellSize / 2);
-						Point pathTo = new Point(maze.cpu.track.get(i + 1).y * cellSize + horizontalOffset + cellSize / 2,
-								maze.cpu.track.get(i + 1).x * cellSize + verticalOffset + cellSize / 2);
+						Point pathFrom = new Point( maze.cpu.track.get(i).y * cellSize + horizontalOffset + cellSize / 2, 
+													maze.cpu.track.get(i).x * cellSize + verticalOffset + cellSize / 2);
+						Point pathTo = new Point( maze.cpu.track.get(i + 1).y * cellSize + horizontalOffset + cellSize / 2,
+												  maze.cpu.track.get(i + 1).x * cellSize + verticalOffset + cellSize / 2);
 
 						drawLine(c, pathFrom, pathTo, maze.cpu.pathPaint);
 					}
 				}
 				
 				if (!maze.solved) {
-					maze.cpuNextMove();
+					maze.cpuNextMove(maze.cpu);
 					mazeMoves++;
 				} else {
 					mazeSolved++;
@@ -296,6 +314,41 @@ public class MazePaperService extends WallpaperService {
 					mazeMoves = 0;
 					mazeAverageMoves = mazeSolved > 0 ? mazeTotalMoves / mazeSolved : 0;
 					generateMaze();
+				}
+			}
+		}
+		
+		void drawMultiCpuMove(Canvas c){
+			int cellSize = getCellSize(c);
+			int horizontalOffset = getHorizontalOffet(c, cellSize);
+			int verticalOffset = getVerticalOffet(c, cellSize);
+			
+			for(int i=0;i<maze.cpuStack.size();i++) {
+				CPU cpu = maze.cpuStack.get(i);
+				Cell cpuCell = maze.getCell(cpu.pos);
+			
+				if (cpuCell != null) {
+					// draw cpu
+					c.drawCircle(cpuCell.pos.y * cellSize + horizontalOffset + maze.cpu.offset.x + 1, 
+								 cpuCell.pos.x * cellSize + verticalOffset + maze.cpu.offset.y + 1, 
+								 maze.cpu.radius, 
+								 maze.cpu.paint);
+
+					// draw cpus track;
+					if (maze.cpu.track.size() > 1) {
+						for (int j = 0; i < maze.cpu.track.size() - 1; j++) {
+							Point pathFrom = new Point( maze.cpu.track.get(j).y * cellSize + horizontalOffset + cellSize / 2, 
+														maze.cpu.track.get(j).x * cellSize + verticalOffset + cellSize / 2);
+							Point pathTo = new Point(maze.cpu.track.get(j + 1).y * cellSize + horizontalOffset + cellSize / 2,
+													 maze.cpu.track.get(j + 1).x * cellSize + verticalOffset + cellSize / 2);
+
+							drawLine(c, pathFrom, pathTo, maze.cpu.pathPaint);
+						}
+					}
+				}
+				
+				if (!maze.solved) {
+					maze.cpuNextMove(maze.cpuStack.get(i));
 				}
 			}
 		}

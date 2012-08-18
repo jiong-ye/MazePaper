@@ -24,6 +24,12 @@
         android:defaultValue="true">
     </CheckBoxPreference>
     <CheckBoxPreference
+        android:key="maze_multi_cpu"
+        android:summary="Solve the maze with more than one cpu players"
+        android:title="Multi CPU"
+        android:defaultValue="true">
+    </CheckBoxPreference>
+    <CheckBoxPreference
         android:key="maze_info"
         android:summary="Display Maze Information"
         android:title="Display Information"
