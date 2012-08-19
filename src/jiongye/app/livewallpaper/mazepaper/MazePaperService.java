@@ -18,7 +18,7 @@ public class MazePaperService extends WallpaperService {
 	@Override
 	public void onCreate() {
 		super.onCreate();
-//		android.os.Debug.waitForDebugger();
+		android.os.Debug.waitForDebugger();
 	}
 
 	@Override
@@ -95,7 +95,7 @@ public class MazePaperService extends WallpaperService {
 			this.progressiveDrawStep  = this.progressiveDrawStep < 1 ? 1 : this.progressiveDrawStep;
 			this.progressiveFullDrawCount = 0;
 			
-			this.debug = false;
+			this.debug = true;
 			
 			this.debugPaint = new Paint();
 			this.debugPaint.setColor(0x88ffffcc);
@@ -110,15 +110,12 @@ public class MazePaperService extends WallpaperService {
 
 		void generateMaze() {
 			maze = new Maze(mazeRows, mazeCols);
+			maze.isMultiCPU = this.multiCPU;
 			maze.createMaze();
-			
-			if(this.multiCPU) {
-				maze.cpuStack = new Stack<CPU>();
-				maze.cpuStack.push(new CPU());
-			} else {
-				maze.cpu = new CPU();
-			}
-			
+						
+			maze.cpuStack = new Stack<CPU>();
+			maze.cpuStack.push(new CPU());
+						
 			progressiveDrawDone = false;
 			progressiveFullDrawCount = 0;
 		}
@@ -194,7 +191,8 @@ public class MazePaperService extends WallpaperService {
 		}
 		
 		void drawMaze(Canvas c) {
-			maze.cpu.setRadius(getCellSize(c));
+			
+			maze.setCpuRadius(getCellSize(c));
 
 			c.save();
 			c.drawColor(0xff000000);
@@ -212,7 +210,7 @@ public class MazePaperService extends WallpaperService {
 			}
 			
 			if(this.debug){
-				c.drawText("Track size: " + maze.cpu.track.size(), 20f, 105f, this.debugPaint);
+				//c.drawText("Track size: " + maze.cpu.track.size(), 20f, 105f, this.debugPaint);
 			}
 						
 			c.restore();
@@ -226,10 +224,7 @@ public class MazePaperService extends WallpaperService {
 				}
 			}
 			
-			if(this.multiCPU)
-				drawMultiCpuMove(c);
-			else 
-				drawCpuMove(c);
+			drawCpuMove(c);
 		}
 		
 		void drawMazeProgress(Canvas c){
@@ -270,55 +265,11 @@ public class MazePaperService extends WallpaperService {
 					progressiveDrawDone = true;
 				}
 			} else {
-				if(this.multiCPU)
-					drawMultiCpuMove(c);
-				else 
-					drawCpuMove(c);
+				drawCpuMove(c);
 			}
 		}
 		
 		void drawCpuMove(Canvas c){
-			int cellSize = getCellSize(c);
-			int horizontalOffset = getHorizontalOffet(c, cellSize);
-			int verticalOffset = getVerticalOffet(c, cellSize);
-			
-			Cell cpuCell = maze.getCell(maze.cpu.pos);
-			
-			if (cpuCell != null) {
-				maze.cpu.pos = new Point(cpuCell.pos.x, cpuCell.pos.y);
-
-				// draw cpu
-				c.drawCircle(cpuCell.pos.y * cellSize + horizontalOffset + maze.cpu.offset.x + 1, 
-							 cpuCell.pos.x * cellSize + verticalOffset + maze.cpu.offset.y + 1, 
-							 maze.cpu.radius, 
-							 maze.cpu.paint);
-
-				// draw cpus track;
-				if (maze.cpu.track.size() > 1) {
-					for (int i = 0; i < maze.cpu.track.size() - 1; i++) {
-						Point pathFrom = new Point( maze.cpu.track.get(i).y * cellSize + horizontalOffset + cellSize / 2, 
-													maze.cpu.track.get(i).x * cellSize + verticalOffset + cellSize / 2);
-						Point pathTo = new Point( maze.cpu.track.get(i + 1).y * cellSize + horizontalOffset + cellSize / 2,
-												  maze.cpu.track.get(i + 1).x * cellSize + verticalOffset + cellSize / 2);
-
-						drawLine(c, pathFrom, pathTo, maze.cpu.pathPaint);
-					}
-				}
-				
-				if (!maze.solved) {
-					maze.cpuNextMove(maze.cpu);
-					mazeMoves++;
-				} else {
-					mazeSolved++;
-					mazeTotalMoves += mazeMoves;
-					mazeMoves = 0;
-					mazeAverageMoves = mazeSolved > 0 ? mazeTotalMoves / mazeSolved : 0;
-					generateMaze();
-				}
-			}
-		}
-		
-		void drawMultiCpuMove(Canvas c){
 			int cellSize = getCellSize(c);
 			int horizontalOffset = getHorizontalOffet(c, cellSize);
 			int verticalOffset = getVerticalOffet(c, cellSize);
@@ -329,31 +280,38 @@ public class MazePaperService extends WallpaperService {
 			
 				if (cpuCell != null) {
 					// draw cpu
-					c.drawCircle(cpuCell.pos.y * cellSize + horizontalOffset + maze.cpu.offset.x + 1, 
-								 cpuCell.pos.x * cellSize + verticalOffset + maze.cpu.offset.y + 1, 
-								 maze.cpu.radius, 
-								 maze.cpu.paint);
+					c.drawCircle(cpuCell.pos.y * cellSize + horizontalOffset + cpu.offset.x + 1, 
+								 cpuCell.pos.x * cellSize + verticalOffset + cpu.offset.y + 1, 
+								 cpu.radius, 
+								 cpu.paint);
 
 					// draw cpus track;
-					if (maze.cpu.track.size() > 1) {
-						for (int j = 0; i < maze.cpu.track.size() - 1; j++) {
-							Point pathFrom = new Point( maze.cpu.track.get(j).y * cellSize + horizontalOffset + cellSize / 2, 
-														maze.cpu.track.get(j).x * cellSize + verticalOffset + cellSize / 2);
-							Point pathTo = new Point(maze.cpu.track.get(j + 1).y * cellSize + horizontalOffset + cellSize / 2,
-													 maze.cpu.track.get(j + 1).x * cellSize + verticalOffset + cellSize / 2);
+					if (cpu.track.size() > 1) {
+						for (int j = 0; j < cpu.track.size() - 1; j++) {
+							Point pathFrom = new Point( cpu.track.get(j).y * cellSize + horizontalOffset + cellSize / 2, 
+														cpu.track.get(j).x * cellSize + verticalOffset + cellSize / 2);
+							Point pathTo = new Point( cpu.track.get(j + 1).y * cellSize + horizontalOffset + cellSize / 2,
+													  cpu.track.get(j + 1).x * cellSize + verticalOffset + cellSize / 2);
 
-							drawLine(c, pathFrom, pathTo, maze.cpu.pathPaint);
+							drawLine(c, pathFrom, pathTo, cpu.pathPaint);
 						}
 					}
 				}
 				
-				if (!maze.solved) {
-					maze.cpuNextMove(maze.cpuStack.get(i));
-				}
+				maze.cpuNextMove(cpu);
+				mazeMoves++;
+			}
+			
+			if (maze.solved) {
+				mazeSolved++;
+				mazeTotalMoves += mazeMoves;
+				mazeMoves = 0;
+				mazeAverageMoves = mazeSolved > 0 ? mazeTotalMoves / mazeSolved : 0;
+				generateMaze();
 			}
 		}
 
-		void drawCell(Canvas c, Cell cell, boolean drawFull){
+		void drawCell(Canvas c, Cell cell, boolean drawFull){ 
 			Point topLeft, topRight, bottomLeft, bottomRight;
 			
 			if (cell != null) {
@@ -394,15 +352,18 @@ public class MazePaperService extends WallpaperService {
 					c.drawRect(topLeft.x + maze.cellStrokeWidth, topLeft.y + maze.cellStrokeWidth, bottomRight.x - maze.cellStrokeWidth,
 							bottomRight.y - maze.cellStrokeWidth, maze.endCellPaint);
 				}
-				// a cell visited by the play but not on his track to destination
-				else if (cell.cpuVisited && !maze.cpu.track.contains(cell.pos)) {
-					c.drawRect(topLeft.x + maze.cellStrokeWidth + 3, topLeft.y + maze.cellStrokeWidth + 3, bottomRight.x
-							- maze.cellStrokeWidth - 3, bottomRight.y - maze.cellStrokeWidth - 3, maze.cpuVisitedCellPaint);
-					// set cpu at the starting cell
-				} else if (cell.isStart && maze.cpu != null && maze.cpu.pos == null) {
+				// a cell visited by the player but not on his track to destination
+				else if (cell.cpuVisited && !this.multiCPU && !maze.cellOnCpuTrack(cell.pos)) {
+					c.drawRect( topLeft.x + maze.cellStrokeWidth + 3, 
+								topLeft.y + maze.cellStrokeWidth + 3, 
+								bottomRight.x - maze.cellStrokeWidth - 3, 
+								bottomRight.y - maze.cellStrokeWidth - 3, 
+								maze.cpuVisitedCellPaint);
+				// set cpu at the starting cell
+				} else if (cell.isStart && maze.cpuStack.size() > 0) {
 					cell.cpuVisited = true;
-					maze.cpu.pos = new Point(cell.pos.x, cell.pos.y);
-					maze.cpu.track.push(new Point(cell.pos.x, cell.pos.y));
+					maze.cpuStack.get(0).pos = new Point(cell.pos.x, cell.pos.y);
+					maze.cpuStack.get(0).track.push(new Point(cell.pos.x, cell.pos.y));
 				} 
 				
 				if(this.debug) {

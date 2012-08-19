@@ -5,6 +5,7 @@ import java.util.Stack;
 
 import android.graphics.Paint;
 import android.graphics.Point;
+import android.util.Log;
 
 public class Maze {
 	public int width;
@@ -13,8 +14,9 @@ public class Maze {
 	public int columns;
 
 	public Cell[][] cells;
-	public CPU cpu;
 	public Stack<CPU> cpuStack;
+	
+	public boolean isMultiCPU;
 	
 	public Point startPoint;
 	public Point endPoint;
@@ -24,8 +26,6 @@ public class Maze {
 	public Paint cpuVisitedCellPaint;
 		
 	public int cellStrokeWidth;
-
-	public int stuckCount;
 	
 	public boolean regenerated;
 	public boolean solved;
@@ -78,7 +78,7 @@ public class Maze {
 		this.cpuVisitedCellPaint.setColor(0x66c3c3c3);
 		this.cpuVisitedCellPaint.setStyle(Paint.Style.FILL);
 		
-		this.stuckCount = 0;
+		this.isMultiCPU = false;
 	}
 	
 	public void regenerate(){
@@ -196,8 +196,13 @@ public class Maze {
 	
 	public void reset() {
 		this.solved = false;
-		this.cpu.track.clear();
-		this.cpu.pos = new Point(this.startPoint.x, this.startPoint.y);
+		
+		for(int i=0;i<this.cpuStack.size();i++){
+			CPU cpu = this.cpuStack.get(i);
+			cpu.track.clear();
+			cpu.pos = new Point(this.startPoint.x, this.startPoint.y);
+		}
+		
 		
 		Cell cell = null;
 		for (int i = 0; i < this.rows; i++) {
@@ -251,14 +256,15 @@ public class Maze {
 	public void cpuNextMove(CPU cpu) {
 		if (this.getCell(cpu.pos).isEnd) {
 			this.solved = true;
-		}
-
+		}		
+		
 		if (!this.solved) {
 			// get all neighbors that havent been visited before
 			Stack<Point> neighbors = new Stack<Point>();
 			Cell curCell = this.getCell(cpu.pos);
 			Cell neighborCell = null;
 			Point neightPoint = null;
+			Point nextMove = null;
 			
 			for (CellNeighbor neighbor : CellNeighbor.values()) {
 				//if there is no wall
@@ -271,7 +277,7 @@ public class Maze {
 						}
 					}
 				}
-			}
+			} 
 			
 			curCell.possibleNeighbor = neighbors.size();
 			Point trackPoint = null;
@@ -280,14 +286,15 @@ public class Maze {
 			switch (neighbors.size()) {
 				//0 choices, back track
 				case 0:
-					if (cpu.track.size() > 0)
-						cpu.pos = cpu.track.pop();
-					
-					//always start the track at the starting point
-					if(cpu.track.size() == 0){
-						trackPoint = new Point(this.startPoint.x, this.startPoint.y);
+					if(!this.isMultiCPU) {
+						if (cpu.track.size() > 0)
+							nextMove = cpu.track.pop();
+						
+						//always start the track at the starting point
+						if(cpu.track.size() == 0){
+							trackPoint = new Point(this.startPoint.x, this.startPoint.y); 
+						}						
 					}
-					
 					curCell.possibleNeighbor = 0;
 					
 					break;
@@ -296,47 +303,65 @@ public class Maze {
 					int nextX = neighbors.get(0).x;
 					int nextY = neighbors.get(0).y;
 					
-					cpu.pos = new Point(nextX, nextY);
-					this.cells[nextX][nextY].cpuVisited = true;
-					this.cells[nextX][nextY].possibleNeighbor--;
-					
-					trackPoint = new Point(nextX,nextY);
+					if(!this.isMultiCPU) {
+						nextMove = new Point(nextX, nextY);
+						this.cells[nextX][nextY].cpuVisited = true;
+						this.cells[nextX][nextY].possibleNeighbor--;
+						
+						trackPoint = new Point(nextX,nextY);
+					} else {
+						CPU newCpu = new CPU();
+						newCpu.pos = new Point(nextX, nextY);
+						this.cpuStack.push(newCpu);
+					}
 					
 					curCell.possibleNeighbor = 0;
 					
 					break;
 				//more than 1 choice, pick randomly
 				default:
-					Random rand = new Random();
-					int randomNeighborIndex = rand.nextInt(neighbors.size());
-					int randX = neighbors.get(randomNeighborIndex).x;
-					int randY = neighbors.get(randomNeighborIndex).y;
-					
-					cpu.pos = new Point(randX, randY);
-					this.cells[randX][randY].cpuVisited = true;
-					this.cells[randX][randY].possibleNeighbor--;
-					
-					//push new point to track
-					trackPoint = new Point(randX,randY);
-															
-					cpu.track.push(trackPoint);
-					
-					//change possible neighbor count
-					if(curCell.possibleNeighbor > 2) {
-						curCell.possibleNeighbor--;
-					} else {
-						// if we are on a straight hallwall (top and bottom walls open or left and right walls open),
-						// possible neighbor count is really the same as 1 choice
-						// because you can only go back by back track
-						if((curCell.walls.get(CellNeighbor.TOP) && curCell.walls.get(CellNeighbor.BOTTOM)) || (curCell.walls.get(CellNeighbor.LEFT) && curCell.walls.get(CellNeighbor.RIGHT))) {
-							curCell.possibleNeighbor = 0;
-						} else {
+					if(!this.isMultiCPU) {
+						Random rand = new Random();
+						int randomNeighborIndex = rand.nextInt(neighbors.size());
+						int randX = neighbors.get(randomNeighborIndex).x;
+						int randY = neighbors.get(randomNeighborIndex).y;
+						
+						nextMove = new Point(randX, randY);
+						this.cells[randX][randY].cpuVisited = true;
+						this.cells[randX][randY].possibleNeighbor--;
+						
+						//push new point to track
+						trackPoint = new Point(randX,randY);
+																
+						cpu.track.push(trackPoint);
+						
+						//change possible neighbor count
+						if(curCell.possibleNeighbor > 2) {
 							curCell.possibleNeighbor--;
+						} else {
+							// if we are on a straight hallwall (top and bottom walls open or left and right walls open),
+							// possible neighbor count is really the same as 1 choice
+							// because you can only go back by back track
+							if( (curCell.walls.get(CellNeighbor.TOP) && curCell.walls.get(CellNeighbor.BOTTOM)) || 
+								(curCell.walls.get(CellNeighbor.LEFT) && curCell.walls.get(CellNeighbor.RIGHT))) {
+								curCell.possibleNeighbor = 0;
+							} else {
+								curCell.possibleNeighbor--;
+							}
+						}
+					} else {
+						for (int i = 0; i < neighbors.size(); i++) {
+							CPU newCpu = new CPU();
+							newCpu.pos = new Point(neighbors.get(i).x, neighbors.get(i).y);
+							this.cpuStack.push(newCpu);
 						}
 					}
 					
 					break;
 			}
+			
+			if(nextMove != null) 
+				cpu.pos = new Point(nextMove);
 			
 			if(trackPoint != null){
 				//cornering fix
@@ -357,16 +382,28 @@ public class Maze {
 							cpu.track.push(cornerPoint);
 					}
 				}
-				cpu.track.push(trackPoint);
-				this.stuckCount = 0;
+				
+				if(!cpu.track.contains(trackPoint))
+					cpu.track.push(trackPoint);
 			}
-			else{
-				this.stuckCount++;
-			}
-			
+		}
+	} 
+		
+	public void setCpuRadius(int radius) {
+		for(int i=0;i<this.cpuStack.size();i++) {
+			this.cpuStack.get(i).setRadius(radius);
 		}
 	}
+	
+	public boolean cellOnCpuTrack(Point p) {
+		for(int i=0;i<this.cpuStack.size();i++) {
+			if(this.cpuStack.get(i).track.contains(p))
+				return true;
+		}
 		
+		return false;
+	}
+	
 	public boolean wallBetween(Point pointA, Point pointB){
 		Cell cellA = this.getCell(pointA);
 		Cell cellB = this.getCell(pointB);
