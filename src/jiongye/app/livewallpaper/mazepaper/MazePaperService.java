@@ -1,7 +1,6 @@
 package jiongye.app.livewallpaper.mazepaper;
 
 import java.util.Random;
-import java.util.Stack;
 
 import android.content.SharedPreferences;
 import android.graphics.Canvas;
@@ -9,6 +8,7 @@ import android.graphics.Paint;
 import android.graphics.Point;
 import android.os.Handler;
 import android.service.wallpaper.WallpaperService;
+import android.util.Log;
 import android.view.SurfaceHolder;
 
 public class MazePaperService extends WallpaperService {
@@ -18,7 +18,7 @@ public class MazePaperService extends WallpaperService {
 	@Override
 	public void onCreate() {
 		super.onCreate();
-		android.os.Debug.waitForDebugger();
+//		android.os.Debug.waitForDebugger();
 	}
 
 	@Override
@@ -39,6 +39,9 @@ public class MazePaperService extends WallpaperService {
 		private int mazeCols = 5;
 		private Maze maze;
 
+		private float infoLeft = 20;
+		private float infoTop = 60;
+		
 		private String solveSpeed;
 
 		private boolean progressiveDraw;
@@ -95,7 +98,7 @@ public class MazePaperService extends WallpaperService {
 			this.progressiveDrawStep  = this.progressiveDrawStep < 1 ? 1 : this.progressiveDrawStep;
 			this.progressiveFullDrawCount = 0;
 			
-			this.debug = true;
+			this.debug = false;
 			
 			this.debugPaint = new Paint();
 			this.debugPaint.setColor(0x88ffffcc);
@@ -112,9 +115,10 @@ public class MazePaperService extends WallpaperService {
 			maze = new Maze(mazeRows, mazeCols);
 			maze.isMultiCPU = this.multiCPU;
 			maze.createMaze();
-						
-			maze.cpuStack = new Stack<CPU>();
-			maze.cpuStack.push(new CPU());
+			
+			CPU cpu = new CPU();
+			cpu.pos = new Point(maze.startPoint);
+			maze.cpuStack.push(cpu);
 						
 			progressiveDrawDone = false;
 			progressiveFullDrawCount = 0;
@@ -204,9 +208,14 @@ public class MazePaperService extends WallpaperService {
 			}
 			
 			if(this.info) {
-				c.drawText("Solved: " + mazeSolved, 20f, 60f, this.debugPaint);
-				c.drawText("Moves: " + mazeMoves, 20f, 75f, this.debugPaint);
-				c.drawText("Average Moves: " + mazeAverageMoves, 20f, 90f, this.debugPaint);
+				c.drawText("Solved: " + mazeSolved, infoLeft, infoTop, this.debugPaint);
+				
+				if(!this.multiCPU){
+					c.drawText("Moves: " + mazeMoves, infoLeft, infoTop+15, this.debugPaint);
+					c.drawText("Average Moves: " + mazeAverageMoves, infoLeft, infoTop+=30, this.debugPaint);
+				} else {
+					c.drawText("CPUs: " + maze.cpuStack.size(), infoLeft, infoTop+15, this.debugPaint);
+				}
 			}
 			
 			if(this.debug){
@@ -298,8 +307,10 @@ public class MazePaperService extends WallpaperService {
 					}
 				}
 				
-				maze.cpuNextMove(cpu);
-				mazeMoves++;
+				if(!cpu.deadend){
+					maze.cpuNextMove(cpu);
+					mazeMoves++;
+				}
 			}
 			
 			if (maze.solved) {
@@ -359,11 +370,6 @@ public class MazePaperService extends WallpaperService {
 								bottomRight.x - maze.cellStrokeWidth - 3, 
 								bottomRight.y - maze.cellStrokeWidth - 3, 
 								maze.cpuVisitedCellPaint);
-				// set cpu at the starting cell
-				} else if (cell.isStart && maze.cpuStack.size() > 0) {
-					cell.cpuVisited = true;
-					maze.cpuStack.get(0).pos = new Point(cell.pos.x, cell.pos.y);
-					maze.cpuStack.get(0).track.push(new Point(cell.pos.x, cell.pos.y));
 				} 
 				
 				if(this.debug) {

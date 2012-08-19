@@ -18,6 +18,8 @@ public class CPU {
 	
 	public Stack<Point> track;
 	
+	public boolean deadend;
+	
 	public CPU() {
 		this.radius = 5;
 		this.track = new Stack<Point>();
@@ -35,6 +37,8 @@ public class CPU {
 		this.pathPaint.setARGB(128, r, g, b);
 		this.pathPaint.setStrokeCap(Cap.ROUND);
 		this.pathPaint.setAntiAlias(true);
+		
+		this.deadend = false;
 	}
 	
 	public void setRadius(int cellSize){
