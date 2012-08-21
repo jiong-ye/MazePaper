@@ -212,15 +212,15 @@ public class MazePaperService extends WallpaperService {
 				
 				if(!this.multiCPU){
 					c.drawText("Moves: " + mazeMoves, infoLeft, infoTop+15, this.debugPaint);
-					c.drawText("Average Moves: " + mazeAverageMoves, infoLeft, infoTop+=30, this.debugPaint);
+					c.drawText("Average Moves: " + mazeAverageMoves, infoLeft, infoTop+30, this.debugPaint);
 				} else {
 					c.drawText("CPUs: " + maze.cpuStack.size(), infoLeft, infoTop+15, this.debugPaint);
 				}
 			}
 			
-			if(this.debug){
+//			if(this.debug){
 				//c.drawText("Track size: " + maze.cpu.track.size(), 20f, 105f, this.debugPaint);
-			}
+//			}
 						
 			c.restore();
 		}

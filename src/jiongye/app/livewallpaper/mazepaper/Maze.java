@@ -330,29 +330,36 @@ public class Maze {
 						trackPoint = new Point(randX,randY);
 																
 						cpu.track.push(trackPoint);
+						
+						//change possible neighbor count
+						if(curCell.possibleNeighbor > 2) {
+							curCell.possibleNeighbor--;
+						} else {
+							// if we are on a straight hallwall (top and bottom walls open or left and right walls open),
+							// possible neighbor count is really the same as 1 choice
+							// because you can only go back by back track
+							if( (curCell.walls.get(CellNeighbor.TOP) && curCell.walls.get(CellNeighbor.BOTTOM)) || 
+								(curCell.walls.get(CellNeighbor.LEFT) && curCell.walls.get(CellNeighbor.RIGHT))) {
+								curCell.possibleNeighbor = 0;
+							} else {
+								curCell.possibleNeighbor--;
+							}
+						}
+						
 					} else {
 						for (int i = 0; i < neighbors.size(); i++) {
-							CPU newCpu = new CPU();
-							newCpu.pos = new Point(neighbors.get(i).x, neighbors.get(i).y);
-							this.cpuStack.push(newCpu);
+							CPU childCpu = new CPU();
+							childCpu.pos = new Point(neighbors.get(i).x, neighbors.get(i).y);
+							childCpu.track.push(new Point(curCell.pos));
+							childCpu.track.push(new Point(childCpu.pos));
+							this.cpuStack.push(childCpu);
+							
+							curCell.possibleNeighbor--;
 						}
 						cpu.deadend = true;
 					}
 					
-					//change possible neighbor count
-					if(curCell.possibleNeighbor > 2) {
-						curCell.possibleNeighbor--;
-					} else {
-						// if we are on a straight hallwall (top and bottom walls open or left and right walls open),
-						// possible neighbor count is really the same as 1 choice
-						// because you can only go back by back track
-						if( (curCell.walls.get(CellNeighbor.TOP) && curCell.walls.get(CellNeighbor.BOTTOM)) || 
-							(curCell.walls.get(CellNeighbor.LEFT) && curCell.walls.get(CellNeighbor.RIGHT))) {
-							curCell.possibleNeighbor = 0;
-						} else {
-							curCell.possibleNeighbor--;
-						}
-					}
+					
 					
 					break;
 			}

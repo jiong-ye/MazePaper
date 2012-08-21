@@ -34,7 +34,8 @@ public class CPU {
 		this.paint.setARGB(255, r, g, b);
 		
 		this.pathPaint = new Paint();
-		this.pathPaint.setARGB(128, r, g, b);
+		this.pathPaint.setARGB(200, r, g, b);
+		this.pathPaint.setStrokeWidth(1f);
 		this.pathPaint.setStrokeCap(Cap.ROUND);
 		this.pathPaint.setAntiAlias(true);
 		
